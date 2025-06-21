@@ -12,109 +12,121 @@
 #define CRTC_CURSOR_HIGH_LOC_REG 0x00E
 #define CRTC_CURSOR_LOW_LOC_REG  0x00F
 
-static void vgaputchar (root_term_t *t, char c);
-static void vgaputchar_unsynced (root_term_t *root_term_t, char c);
-static root_text_pos_t vgagetpos (root_term_t *t);
-static void vgaadvance (root_term_t *t, root_u16 x, root_u16 y);
-static void vgasetpos (root_term_t *t, root_u16 x, root_u16 y);
-static void vgasetcursorpos (root_term_t *t, root_u16 x, root_u16 y);
-static void vgasetcursorvisible (root_term_t *t, root_u8 visible);
-static void vgaclear (root_term_t *t, root_u32 color);
+static root_u16 vgagetwidth (root_term_t *term);
+static root_u16 vgagetheight (root_term_t *term);
+static void vgaputchar (root_term_t *term, char c);
+static void vgaputchar_unsynced (root_term_t *term, char c);
+static void vgaadvance (root_term_t *term, root_u16 x, root_u16 y);
+static void vgasetcursorpos (root_term_t *term, root_u16 x, root_u16 y);
+static void vgasetcursorvisible (root_term_t *term, root_u8 visible);
+static void vgasetcursorcolor (root_term_t *term, root_u32 fg, root_u32 bg);
+static void vgaclear (root_term_t *term, root_u32 color);
 
 int
 root_initvga (root_vga_term_t *out)
 {
   root_u8 fg = ROOT_VGA_COLOR_GREEN;
   root_u8 bg = ROOT_VGA_COLOR_BLACK;
-  root_vga_cursor_t vgacursor
-      = { .base = { .x = 0, .y = 0, .visible = 0 }, .color = bg << 4 | fg };
 
-  out->pos.x = 0;
-  out->pos.y = 0;
+  out->base.pos.x = 0;
+  out->base.pos.y = 0;
+  out->base.cursor.x = 0;
+  out->base.cursor.y = 0;
+  out->base.cursor.visible = 0;
 
   out->base.type = ROOT_TERM_TYPE_VGA;
   out->base.attribs.tabsize = 4;
   out->base.attribs.scrolltype = ROOT_SCROLL_TYPE_NEWLINE;
 
+  out->base.getwidth = vgagetwidth;
+  out->base.getheight = vgagetheight;
+
   out->base.putchar = vgaputchar;
   out->base.putchar_unsynced = vgaputchar_unsynced;
-  out->base.getpos = vgagetpos;
   out->base.advance = vgaadvance;
-  out->base.setpos = vgasetpos;
   out->base.setcursorpos = vgasetcursorpos;
   out->base.setcursorvisible = vgasetcursorvisible;
+  out->base.setcursorcolor = vgasetcursorcolor;
   out->base.clear = vgaclear;
-
-  out->cursor = vgacursor;
 
   out->state.width = 80;
   out->state.height = 25;
   out->state.stride = out->state.width << 1;
   out->state.data = (root_u8 *) 0xB8000;
 
+  out->cursor_color = bg << 4 | fg;
+
   root_outb (CRTC_ADDRESS_REG, CRTC_MAX_SCANLINE_REG);
   out->state.max_scanline = root_inb (CRTC_DATA_REG) & 0x1F;
 
   vgaclear (&out->base, bg << 4 | fg);
-  vgasetcursorpos (&out->base, vgacursor.base.x, vgacursor.base.y);
+  vgasetcursorpos (&out->base, out->base.cursor.x, out->base.cursor.y);
   vgasetcursorvisible (&out->base, 1);
 
   return 0;
 }
 
-void
-vgaputchar (root_term_t *t, char c)
+static root_u16
+vgagetwidth (root_term_t *term)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  vgaputchar_unsynced (t, c);
-  vgasetcursorpos (t, vga->pos.x, vga->pos.y);
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  return vga_term->state.width;
+}
+
+static root_u16
+vgagetheight (root_term_t *term)
+{
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  return vga_term->state.height;
+}
+
+void
+vgaputchar (root_term_t *term, char c)
+{
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  vgaputchar_unsynced (term, c);
+  vgasetcursorpos (term, vga_term->base.pos.x, vga_term->base.pos.y);
 }
 
 static void
-vgaputchar_unsynced (root_term_t *t, char c)
+vgaputchar_unsynced (root_term_t *term, char c)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  root_u8 *data = vga->state.data;
-  data += vga->pos.y * vga->state.stride + (vga->pos.x << 1);
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  root_u8 *data = vga_term->state.data;
+  data += vga_term->base.pos.y * vga_term->state.stride
+          + (vga_term->base.pos.x << 1);
   switch (c)
     {
     case '\t':
-      for (root_u32 i = 0; i < vga->base.attribs.tabsize; i++)
-        vgaputchar_unsynced (t, ' ');
+      for (root_u32 i = 0; i < vga_term->base.attribs.tabsize; i++)
+        vgaputchar_unsynced (term, ' ');
       break;
     case '\r':
-      vgaadvance (t, 0, 1);
+      vgaadvance (term, 0, 1);
       break;
     case '\n':
-      vgaadvance (t, ROOT_TEXT_POS_RESET, 1);
+      vgaadvance (term, ROOT_TEXT_POS_RESET, 1);
       break;
     default:
       data[0] = (root_u8) c;
-      data[1] = vga->cursor.color;
-      vgaadvance (t, 1, 0);
+      data[1] = vga_term->cursor_color;
+      vgaadvance (term, 1, 0);
       break;
     }
 }
 
-root_text_pos_t
-vgagetpos (root_term_t *t)
-{
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  return vga->pos;
-}
-
 void
-vgaadvance (root_term_t *t, root_u16 x, root_u16 y)
+vgaadvance (root_term_t *term, root_u16 x, root_u16 y)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  root_u16 nx = vga->pos.x;
-  root_u16 ny = vga->pos.y;
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  root_u16 nx = vga_term->base.pos.x;
+  root_u16 ny = vga_term->base.pos.y;
 
   if (x != ROOT_TEXT_POS_RESET)
     {
       nx += x;
-      ny += nx / vga->state.width;
-      nx %= vga->state.width;
+      ny += nx / vga_term->state.width;
+      nx %= vga_term->state.width;
     }
   else
     {
@@ -123,39 +135,41 @@ vgaadvance (root_term_t *t, root_u16 x, root_u16 y)
   if (y != ROOT_TEXT_POS_RESET)
     {
       ny += y;
-      switch (vga->base.attribs.scrolltype)
+      switch (vga_term->base.attribs.scrolltype)
         {
         case ROOT_SCROLL_TYPE_WRAP:
-          ny %= vga->state.height;
+          ny %= vga_term->state.height;
           break;
         case ROOT_SCROLL_TYPE_NEWLINE:
-          if (ny >= vga->state.height)
+          if (ny >= vga_term->state.height)
             {
-              root_u16 rows = ny - vga->state.height + 1,
-                       clearstart = vga->state.height - rows;
-              root_u8 *src = vga->state.data + rows * vga->state.stride,
-                      *dst = vga->state.data;
+              root_u16 rows = ny - vga_term->state.height + 1,
+                       clearstart = vga_term->state.height - rows;
+              root_u8 *src
+                  = vga_term->state.data + rows * vga_term->state.stride,
+                  *dst = vga_term->state.data;
               for (root_u16 ry = 0; ry < clearstart; ry++)
                 {
-                  for (root_u16 rx = 0; rx < vga->state.width; rx++)
+                  for (root_u16 rx = 0; rx < vga_term->state.width; rx++)
                     {
                       root_u16 idx = rx << 1;
                       dst[idx] = src[idx];
                       dst[idx + 1] = src[idx + 1];
                     }
-                  src += vga->state.stride;
-                  dst += vga->state.stride;
+                  src += vga_term->state.stride;
+                  dst += vga_term->state.stride;
                 }
-              dst = vga->state.data + clearstart * vga->state.stride;
-              for (root_u16 ry = clearstart; ry < vga->state.height; ry++)
+              dst = vga_term->state.data + clearstart * vga_term->state.stride;
+              for (root_u16 ry = clearstart; ry < vga_term->state.height; ry++)
                 {
-                  for (root_u16 rx = 0; rx < vga->state.width; rx++, dst += 2)
+                  for (root_u16 rx = 0; rx < vga_term->state.width;
+                       rx++, dst += 2)
                     {
                       dst[0] = 0;
-                      dst[1] = vga->cursor.color;
+                      dst[1] = vga_term->cursor_color;
                     }
                 }
-              ny = vga->state.height - 1;
+              ny = vga_term->state.height - 1;
             }
           break;
         }
@@ -163,26 +177,17 @@ vgaadvance (root_term_t *t, root_u16 x, root_u16 y)
   else if (y == ROOT_TEXT_POS_RESET)
     ny = 0;
 
-  vga->pos.x = nx;
-  vga->pos.y = ny;
+  vga_term->base.pos.x = nx;
+  vga_term->base.pos.y = ny;
 }
 
 void
-vgasetpos (root_term_t *t, root_u16 x, root_u16 y)
+vgasetcursorpos (root_term_t *term, root_u16 x, root_u16 y)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  // TODO: validate X/Y
-  vga->pos.x = x;
-  vga->pos.y = y;
-}
-
-void
-vgasetcursorpos (root_term_t *t, root_u16 x, root_u16 y)
-{
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  root_u16 pos = y * vga->state.width + x;
-  vga->cursor.base.x = x;
-  vga->cursor.base.y = y;
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  root_u16 pos = y * vga_term->state.width + x;
+  vga_term->base.cursor.x = x;
+  vga_term->base.cursor.y = y;
   root_outb (CRTC_ADDRESS_REG, CRTC_CURSOR_LOW_LOC_REG);
   root_outb (CRTC_DATA_REG, pos & 0xFF);
   root_outb (CRTC_ADDRESS_REG, CRTC_CURSOR_HIGH_LOC_REG);
@@ -190,10 +195,10 @@ vgasetcursorpos (root_term_t *t, root_u16 x, root_u16 y)
 }
 
 void
-vgasetcursorvisible (root_term_t *t, root_u8 visible)
+vgasetcursorvisible (root_term_t *term, root_u8 visible)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  if (vga->cursor.base.visible != visible)
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  if (vga_term->base.cursor.visible != visible)
     {
       if (visible == 1)
         {
@@ -201,25 +206,32 @@ vgasetcursorvisible (root_term_t *t, root_u8 visible)
           root_outb (CRTC_DATA_REG, (root_inb (CRTC_DATA_REG) & 0xC0));
           root_outb (CRTC_ADDRESS_REG, CRTC_CURSOR_END_REG);
           root_outb (CRTC_DATA_REG, (root_inb (CRTC_DATA_REG) & 0xE0)
-                                        | vga->state.max_scanline);
+                                        | vga_term->state.max_scanline);
         }
       else
         {
           root_outb (CRTC_ADDRESS_REG, CRTC_CURSOR_START_REG);
           root_outb (CRTC_DATA_REG, 0x20);
         }
-      vga->cursor.base.visible = visible;
+      vga_term->base.cursor.visible = visible;
     }
 }
 
 void
-vgaclear (root_term_t *t, root_u32 color)
+vgasetcursorcolor (root_term_t *term, root_u32 fg, root_u32 bg)
 {
-  root_vga_term_t *vga = (root_vga_term_t *) t;
-  root_u8 *data = vga->state.data;
-  for (root_u16 y = 0; y < vga->state.height; y++)
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  vga_term->cursor_color = (fg & 0xF) | (bg & 0xF) << 4;
+}
+
+void
+vgaclear (root_term_t *term, root_u32 color)
+{
+  root_vga_term_t *vga_term = (root_vga_term_t *) term;
+  root_u8 *data = vga_term->state.data;
+  for (root_u16 y = 0; y < vga_term->state.height; y++)
     {
-      for (root_u16 x = 0; x < vga->state.width; x++, data += 2)
+      for (root_u16 x = 0; x < vga_term->state.width; x++, data += 2)
         {
           data[0] = 0;
           data[1] = color;

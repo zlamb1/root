@@ -13,7 +13,8 @@ WARNINGS := \
 	-Wmissing-prototypes -Wno-missing-braces -Wno-missing-field-initializers -Wbad-function-cast \
 	-Winline -Wundef -Wunreachable-code -Wredundant-decls -Wfloat-equal -Wcast-align \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
-	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -Wunused-result -pedantic-errors
+	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -Wunused-result -pedantic-errors \
+	-Wno-error=unused-function
 CFLAGS := \
 	${WARNINGS} -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 	-fno-strict-aliasing -mno-red-zone -fstack-protector-all
@@ -38,15 +39,21 @@ BOOTLD := ${BUILDDIR}/boot.ld
 BOOTELF := ${BUILDDIR}/boot.elf
 BOOTBIN := ${BUILDDIR}/boot.bin
 
-.PHONY: all clean
+FONTSRC := font/Lat2-Terminus20x10.psf
+FONTOBJ := ${BUILDDIR}/font.o
+
+.PHONY: all clean font
 
 all: ${BOOTBIN}
+
+${FONTOBJ}: ${FONTSRC}
+	objcopy -O elf32-i386 -B i386 -I binary $< $@
 
 ${BOOTBIN}: ${BOOTELF}
 	objcopy -O binary $< $@
 
-${BOOTELF}: ${BOOT_TARGET_OBJFILES} ${BOOT_OBJFILES} ${BOOTLD}
-	${CC} ${LDFLAGS} ${BOOT_TARGET_OBJFILES} ${BOOT_OBJFILES} -T ${BOOTLD} -o $@ ${LIBFLAGS}
+${BOOTELF}: ${BOOT_TARGET_OBJFILES} ${BOOT_OBJFILES} ${FONTOBJ} ${BOOTLD}
+	${CC} ${LDFLAGS} ${FONTOBJ} ${BOOT_TARGET_OBJFILES} ${BOOT_OBJFILES} -T ${BOOTLD} -o $@ ${LIBFLAGS}
 
 ${BOOTLD}: ${BOOT_TARGET_LDFILE}
 	ln -sf ${realpath $<} $@

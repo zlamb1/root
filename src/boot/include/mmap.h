@@ -1,6 +1,31 @@
 #ifndef ROOT_MMAP_H
 #define ROOT_MMAP_H 1
 
-int root_init_mmap (void);
+#include "types.h"
+
+typedef enum root_mm_type_t
+{
+  ROOT_MM_TYPE_FREE = 0x1,
+  ROOT_MM_TYPE_RESERVED = 0x2,
+  ROOT_MM_TYPE_ACPI = 0x3,
+  ROOT_MM_TYPE_ACPI_NVS = 0x4,
+  ROOT_MM_TYPE_BAD = 0x5
+} root_mm_type_t;
+
+typedef struct root_mm_entry_t
+{
+  root_u64 base;
+  root_u64 length;
+  root_u32 type;
+  root_u32 acpi_attribs;
+} __attribute__ ((packed)) root_mm_entry_t;
+
+typedef struct root_mmap_t
+{
+  root_u32 count;
+  root_mm_entry_t *entries;
+} root_mmap_t;
+
+int root_init_mmap (root_mmap_t *mmap);
 
 #endif

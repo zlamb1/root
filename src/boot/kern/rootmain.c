@@ -1,7 +1,8 @@
-#include "mmap.h"
+#include "alloc.h"
+#include "gfx.h"
+#include "mode.h"
+#include "print.h"
 #include "string.h"
-#include "text.h"
-#include "vbe.h"
 
 extern int random (void);
 
@@ -29,7 +30,7 @@ const char *greeting = "Welcome to Root.";
 void
 root_printwelcome (void)
 {
-  int width = 80, hwidth = width >> 1;
+  int width = root_term->getwidth (root_term), hwidth = width >> 1;
   int start = hwidth - line_size / 2;
   int greeting_size = root_strlen (greeting);
   root_printf ("\n");
@@ -50,14 +51,34 @@ root_initcmd (void)
   // kprintf ("zOS> ");
 }
 
+root_gfx_term_t gfx_term;
+
 void
 root_main (void)
 {
-  root_inittext ();
+  root_initprint (NULL);
   root_printwelcome ();
-  root_init_mmap ();
-  root_queryvbeinfo ();
-  root_initcmd ();
+  (void) gfx_term;
+  if (root_initalloc ())
+    {
+      root_printf ("failed to init alloc\n");
+    }
+  do
+    {
+      int mode;
+      root_video_mode_t video_mode;
+      if ((mode = root_getvideomode (1280, 800, 32, &video_mode)) < 0)
+        {
+          root_printf ("failed to get video mode\n");
+          break;
+        }
+      root_setvideomode (mode);
+      root_initgfx_term (&gfx_term, &video_mode);
+      root_initprint (&gfx_term.base);
+      root_printwelcome ();
+    }
+  while (0);
+  (void) root_initcmd;
   for (;;)
     ;
 }

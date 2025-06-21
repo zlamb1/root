@@ -28,6 +28,9 @@ enter_prot:
 pmode:
     mov $0x10, %ax
     mov %ax, %ds
+    mov %ax, %fs
+    mov %ax, %es
+    mov %ax, %gs
     mov %ax, %ss
     mov (%esp), %eax
     mov %eax, tmpaddr

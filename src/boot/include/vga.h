@@ -1,5 +1,5 @@
-#ifndef ZVGA_H
-#define ZVGA_H
+#ifndef ROOT_VGA_H
+#define ROOT_VGA_H 1
 
 #include "text.h"
 
@@ -20,12 +20,6 @@
 #define ROOT_VGA_COLOR_YELLOW       0xE
 #define ROOT_VGA_COLOR_WHITE        0xF
 
-typedef struct root_vga_cursor_t
-{
-  root_text_cursor_t base;
-  root_u8 color;
-} root_vga_cursor_t;
-
 typedef struct root_vga_state_t
 {
   root_u16 width, height, stride;
@@ -35,9 +29,8 @@ typedef struct root_vga_state_t
 typedef struct root_vga_term_t
 {
   root_term_t base;
-  root_text_pos_t pos;
   root_vga_state_t state;
-  root_vga_cursor_t cursor;
+  root_u8 cursor_color;
 } root_vga_term_t;
 
 int root_initvga (root_vga_term_t *out);

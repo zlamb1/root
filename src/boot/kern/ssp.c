@@ -1,5 +1,5 @@
 #include "ssp.h"
-#include "text.h"
+#include "print.h"
 
 uintptr_t __stack_chk_guard = 0xAD17F32C;
 

@@ -1,4 +1,5 @@
-#ifndef ZTYPE_H
+#ifndef ROOT_TYPE_H
+#define ROOT_TYPE_H 1
 
 #include <stddef.h>
 #include <stdint.h>
