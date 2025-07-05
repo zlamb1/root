@@ -1,10 +1,10 @@
 #include <stdarg.h>
 
-#include "print.h"
-#include "vga.h"
+#include "console/print.h"
+#include "types.h"
 
-root_term_t *root_term;
-static root_vga_term_t root_vga_term;
+root_console_t *root_console;
+root_fd_t *stdin, *stdout;
 
 static char hdigits[16] = { '0', '1', '2', '3', '4', '5', '6', '7',
                             '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -20,49 +20,42 @@ typedef enum FMT_FLAGS
   FMT_FLAG_LONG_LONG = 0x40
 } FMT_FLAGS;
 
-int
-root_initprint (root_term_t *term)
+void
+root_initprint (root_console_t *con)
 {
-  if (term != NULL)
-    root_term = term;
-  else
-    {
-      int r = root_initvga (&root_vga_term);
-      if (r != 0)
-        return r;
-      root_term = &root_vga_term.base;
-    }
-  return 0;
+  root_console = con;
+  stdin = &con->fd.fd;
+  stdout = &con->fd.fd;
 }
 
 root_u32
-root_printi32_unsynced (root_i32 n, root_u8 base, root_u8 capital)
+root_fprinti32 (root_fd_t *fd, root_i32 n, root_u8 base, root_u8 capital)
 {
   root_u32 sign = 0;
   if (n < 0)
     {
       sign = 1;
-      root_putchar ('-');
+      root_fputchar_unsynced (fd, '-');
       n = -n;
     }
-  return sign + root_printu32_unsynced ((root_u32) n, base, capital);
+  return sign + root_fprintu32 (fd, (root_u32) n, base, capital);
 }
 
 root_u32
-root_printi64_unsynced (root_i64 n, root_u8 base, root_u8 capital)
+root_fprinti64 (root_fd_t *fd, root_i64 n, root_u8 base, root_u8 capital)
 {
   root_u32 sign = 0;
   if (n < 0)
     {
       sign = 1;
-      root_putchar ('-');
+      root_fputchar_unsynced (fd, '-');
       n = -n;
     }
-  return sign + root_printu64_unsynced ((root_u64) n, base, capital);
+  return sign + root_fprintu64 (fd, (root_u64) n, base, capital);
 }
 
 root_u32
-root_printu32_unsynced (root_u32 n, root_u8 base, root_u8 capital)
+root_fprintu32 (root_fd_t *fd, root_u32 n, root_u8 base, root_u8 capital)
 {
   if (n != 0)
     {
@@ -76,24 +69,25 @@ root_printu32_unsynced (root_u32 n, root_u8 base, root_u8 capital)
       tmp = cnt;
       while (cnt)
         {
+          char ch;
           root_u8 digit = stack[--cnt];
           if (digit < 10)
-            root_putchar_unsynced (hdigits[digit]);
+            ch = hdigits[digit];
           else
-            root_putchar_unsynced (capital ? hdigits[digit] - 0x20
-                                           : hdigits[digit]);
+            ch = capital ? hdigits[digit] - 0x20 : hdigits[digit];
+          root_fputchar_unsynced (fd, ch);
         }
       return tmp;
     }
   else
     {
-      root_putchar_unsynced ('0');
+      root_fputchar_unsynced (fd, '0');
       return 1;
     }
 }
 
 root_u32
-root_printu64_unsynced (root_u64 n, root_u8 base, root_u8 capital)
+root_fprintu64 (root_fd_t *fd, root_u64 n, root_u8 base, root_u8 capital)
 {
   if (n != 0)
     {
@@ -107,18 +101,20 @@ root_printu64_unsynced (root_u64 n, root_u8 base, root_u8 capital)
       tmp = cnt;
       while (cnt)
         {
+          char ch;
           root_u8 digit = stack[--cnt];
           if (digit < 10)
-            root_putchar_unsynced (hdigits[digit]);
+            ch = hdigits[digit];
           else
-            root_putchar_unsynced (capital ? hdigits[digit] - 0x20
-                                           : hdigits[digit]);
+            ch = capital ? hdigits[digit] - 0x20 : hdigits[digit];
+          root_fputchar_unsynced (fd, ch);
+          fd->write (fd, &ch, 1);
         }
       return tmp;
     }
   else
     {
-      root_putchar_unsynced ('0');
+      root_fputchar_unsynced (fd, '0');
       return 1;
     }
 }
@@ -209,14 +205,16 @@ readprecision (const char *fmt, int *precision)
           goto readc;
         }
     }
+  else
+    p = -2;
 endread:
   *precision = p;
   return fmt;
 }
 
 static int
-printlen_none (int *len, va_list *args, int flags, int width, int precision,
-               char c)
+printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
+               int precision, char c)
 {
   (void) width;
   switch (c)
@@ -227,15 +225,15 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         root_i32 n = va_arg (*args, int);
         if (flags & FMT_FLAG_FORCE_SIGN && n > 0)
           {
-            root_putchar_unsynced ('+');
+            root_fputchar_unsynced (fd, '+');
             len++;
           }
         else if (flags & FMT_FLAG_SPACE_SIGN && n >= 0)
           {
-            root_putchar_unsynced (' ');
+            root_fputchar_unsynced (fd, ' ');
             len++;
           }
-        len += root_printi32_unsynced (n, 10, 0);
+        len += root_fprinti32 (fd, n, 10, 0);
         break;
       }
     case 'u':
@@ -243,15 +241,15 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         root_u32 n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_FORCE_SIGN && n != 0)
           {
-            root_putchar_unsynced ('+');
+            root_fputchar_unsynced (fd, '+');
             len++;
           }
         else if (flags & FMT_FLAG_SPACE_SIGN)
           {
-            root_putchar_unsynced (' ');
+            root_fputchar_unsynced (fd, ' ');
             len++;
           }
-        len += root_printu32_unsynced (n, 10, 0);
+        len += root_fprintu32 (fd, n, 10, 0);
         break;
       }
     case 'b':
@@ -260,11 +258,11 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         root_u32 n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
-            root_putchar_unsynced (c);
+            root_fputchar_unsynced (fd, '0');
+            root_fputchar_unsynced (fd, c);
             len += 2;
           }
-        len += root_printu32_unsynced (n, 2, 0);
+        len += root_fprintu32 (fd, n, 2, 0);
         break;
       }
     case 'o':
@@ -272,10 +270,10 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         root_u32 n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
+            root_fputchar_unsynced (fd, '0');
             len++;
           }
-        len += root_printu32_unsynced (n, 8, 0);
+        len += root_fprintu32 (fd, n, 8, 0);
         break;
       }
     case 'x':
@@ -284,33 +282,30 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         root_u32 n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
-            root_putchar_unsynced (c);
+            root_fputchar_unsynced (fd, '0');
+            root_fputchar_unsynced (fd, c);
             len += 2;
           }
-        len += root_printu32_unsynced (n, 16, c == 'X');
+        len += root_fprintu32 (fd, n, 16, c == 'X');
         break;
       }
     case 'c':
-      root_putchar_unsynced (va_arg (*args, int));
+      root_fputchar_unsynced (fd, va_arg (*args, int));
       len++;
       break;
     case 's':
       {
         const char *s = (const char *) va_arg (*args, int);
-        if (precision > 0)
+        if (precision >= 0)
           {
-            while (precision--)
-              {
-                root_putchar_unsynced (*s++);
-                len++;
-              }
+            fd->write (fd, s, precision);
+            len += precision;
           }
         else
           {
             while (*s != 0)
               {
-                root_putchar_unsynced (*s++);
+                root_fputchar_unsynced (fd, *s++);
                 len++;
               }
           }
@@ -319,10 +314,10 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
     case 'p':
       {
         uintptr_t p = (uintptr_t) (void *) va_arg (*args, int);
-        root_putchar_unsynced ('0');
-        root_putchar_unsynced ('x');
+        root_fputchar_unsynced (fd, '0');
+        root_fputchar_unsynced (fd, 'x');
         len += 2;
-        len += root_printu32_unsynced ((root_u32) p, 16, 0);
+        len += root_fprintu32 (fd, (root_u32) p, 16, 0);
         break;
       }
     case 'n':
@@ -332,7 +327,7 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
         break;
       }
     case '%':
-      root_putchar_unsynced ('%');
+      root_fputchar_unsynced (fd, '%');
       len++;
       break;
     default:
@@ -342,8 +337,8 @@ printlen_none (int *len, va_list *args, int flags, int width, int precision,
 }
 
 static int
-printlen_longlong (int *len, va_list *args, int flags, int width,
-                   int precision, char c)
+printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
+                   int width, int precision, char c)
 {
   (void) width;
   (void) precision;
@@ -355,15 +350,15 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         root_i64 n = va_arg (*args, long long int);
         if (flags & FMT_FLAG_FORCE_SIGN && n > 0)
           {
-            root_putchar_unsynced ('+');
+            root_fputchar_unsynced (fd, '+');
             len++;
           }
         else if (flags & FMT_FLAG_SPACE_SIGN && n >= 0)
           {
-            root_putchar_unsynced (' ');
+            root_fputchar_unsynced (fd, ' ');
             len++;
           }
-        len += root_printi64_unsynced (n, 10, 0);
+        len += root_fprinti64 (fd, n, 10, 0);
         break;
       }
     case 'u':
@@ -371,15 +366,15 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         root_u64 n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_FORCE_SIGN && n != 0)
           {
-            root_putchar_unsynced ('+');
+            root_fputchar_unsynced (fd, '+');
             len++;
           }
         else if (flags & FMT_FLAG_SPACE_SIGN)
           {
-            root_putchar_unsynced (' ');
+            root_fputchar_unsynced (fd, ' ');
             len++;
           }
-        len += root_printu64_unsynced (n, 10, 0);
+        len += root_fprintu64 (fd, n, 10, 0);
         break;
       }
     case 'b':
@@ -388,11 +383,11 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         root_u64 n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
-            root_putchar_unsynced (c);
+            root_fputchar_unsynced (fd, '0');
+            root_fputchar_unsynced (fd, c);
             len += 2;
           }
-        len += root_printu64_unsynced (n, 2, 0);
+        len += root_fprintu64 (fd, n, 2, 0);
         break;
       }
     case 'o':
@@ -400,10 +395,10 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         root_u64 n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
+            root_fputchar_unsynced (fd, '0');
             len++;
           }
-        len += root_printu64_unsynced (n, 8, 0);
+        len += root_fprintu64 (fd, n, 8, 0);
         break;
       }
     case 'x':
@@ -412,11 +407,11 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         root_u64 n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
-            root_putchar_unsynced ('0');
-            root_putchar_unsynced (c);
+            root_fputchar_unsynced (fd, '0');
+            root_fputchar_unsynced (fd, c);
             len += 2;
           }
-        len += root_printu64_unsynced (n, 16, c == 'X');
+        len += root_fprintu64 (fd, n, 16, c == 'X');
         break;
       }
     case 'c':
@@ -430,7 +425,7 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
         break;
       }
     case '%':
-      root_putchar_unsynced ('%');
+      root_fputchar_unsynced (fd, '%');
       len++;
       break;
     default:
@@ -440,16 +435,13 @@ printlen_longlong (int *len, va_list *args, int flags, int width,
 }
 
 int
-root_printf (const char *fmt, ...)
+root_vfprintf (root_fd_t *fd, const char *fmt, va_list args)
 {
-  va_list args;
   int len = 0;
-  char c;
-  va_start (args, fmt);
-
+  char ch;
 readc:
-  c = *fmt++;
-  if (c == '%')
+  ch = *fmt++;
+  if (ch == '%')
     {
       FMT_FLAGS flags;
       int width, precision, r;
@@ -460,36 +452,34 @@ readc:
         width = va_arg (args, int);
       if (precision == -1)
         precision = va_arg (args, int);
-      c = *fmt++;
-      if (c == 'l')
+      ch = *fmt++;
+      if (ch == 'l')
         {
-          c = *fmt++;
-          if (c != 'l')
+          ch = *fmt++;
+          if (ch != 'l')
             flags |= FMT_FLAG_LONG;
           else
             {
-              c = *fmt++;
+              ch = *fmt++;
               flags |= FMT_FLAG_LONG_LONG;
             }
         }
       if (flags & FMT_FLAG_LONG_LONG)
-        r = printlen_longlong (&len, &args, flags, width, precision, c);
+        r = printlen_longlong (fd, &len, &args, flags, width, precision, ch);
       else if (flags & FMT_FLAG_LONG)
         r = -1;
       else
-        r = printlen_none (&len, &args, flags, width, precision, c);
+        r = printlen_none (fd, &len, &args, flags, width, precision, ch);
       if (r)
         return r;
       goto readc;
     }
-  else if (c != '\0')
+  else if (ch != '\0')
     {
-      root_putchar_unsynced (c);
+      root_fputchar_unsynced (fd, ch);
       len++;
       goto readc;
     }
-
-  va_end (args);
-  root_cursorsync ();
+  root_cursor_sync ();
   return len;
 }

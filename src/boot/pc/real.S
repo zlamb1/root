@@ -6,6 +6,12 @@ tmpaddr:
 protstack:
 .long STAGE2_STK
 
+realidt:
+.quad 0
+
+protidt:
+.quad 0
+
 .section .stage2.utility, "ax"
 
 .extern STAGE1_STK
@@ -19,6 +25,8 @@ protstack:
 
 .code16
 enter_prot:
+    cli
+    sidt realidt
     lgdt gdtdesc
     mov %cr0, %eax
     or $0x1, %al
@@ -39,10 +47,12 @@ pmode:
     mov %eax, %ebp
     mov tmpaddr, %eax
     push %eax
+    lidt protidt
     ret
 
 enter_real:
     lgdt gdtdesc
+    sidt protidt
     mov $0x20, %ax
     mov %ax, %ds
     mov %ax, %fs
@@ -71,6 +81,8 @@ rmode:
     mov %ax, %es
     mov %ax, %gs
     mov %ax, %ss
+    lidt realidt
+    sti
     retl
 
 # ;eax - int num

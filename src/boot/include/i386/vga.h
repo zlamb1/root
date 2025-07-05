@@ -1,7 +1,7 @@
 #ifndef ROOT_VGA_H
 #define ROOT_VGA_H 1
 
-#include "text.h"
+#include "console/console.h"
 
 #define ROOT_VGA_COLOR_BLACK        0x0
 #define ROOT_VGA_COLOR_BLUE         0x1
@@ -20,19 +20,21 @@
 #define ROOT_VGA_COLOR_YELLOW       0xE
 #define ROOT_VGA_COLOR_WHITE        0xF
 
-typedef struct root_vga_state_t
+typedef struct root_vga_console_t
 {
-  root_u16 width, height, stride;
-  root_u8 *data, max_scanline;
-} root_vga_state_t;
+  root_console_t base;
+  root_u16 max_scanline;
+  root_u8 *fb;
+} root_vga_console_t;
 
-typedef struct root_vga_term_t
-{
-  root_term_t base;
-  root_vga_state_t state;
-  root_u8 cursor_color;
-} root_vga_term_t;
+root_err_t vga_console_init (root_vga_console_t *con);
 
-int root_initvga (root_vga_term_t *out);
+void vga_putglyph (struct root_console_t *con, char ch, root_u16 x,
+                   root_u16 y);
+void vga_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row);
+void vga_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg);
+void vga_putcursor (struct root_console_t *con, root_u16 x, root_u16 y);
+void vga_setcursor (struct root_console_t *con, root_u8 enabled);
+void vga_blinkcursor (struct root_console_t *con);
 
 #endif

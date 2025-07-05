@@ -1,5 +1,5 @@
-#include "mode.h"
-#include "bios.h"
+#include "i386/vbe.h"
+#include "i386/bios.h"
 
 typedef struct root_vbe_info_t
 {

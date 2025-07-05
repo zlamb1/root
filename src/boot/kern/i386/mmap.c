@@ -1,5 +1,5 @@
-#include "mmap.h"
-#include "bios.h"
+#include "i386/mmap.h"
+#include "i386/bios.h"
 #include "sort.h"
 #include "string.h"
 #include "types.h"
@@ -125,7 +125,7 @@ mm_get_entry (root_bios_args_t *args, root_mm_entry_t *entry)
       entry->type = ROOT_MM_TYPE_RESERVED;
       break;
     }
-  return 0;
+  return ROOT_SUCCESS;
 }
 
 int
@@ -134,7 +134,7 @@ root_init_mmap (root_mmap_t *mmap)
   root_bios_args_t args;
   int r;
   if (mmap == NULL)
-    return -1;
+    return ROOT_ERR_ARG;
   num_mm_entries = 0;
   args.ebx = 0;
   do
@@ -151,5 +151,5 @@ root_init_mmap (root_mmap_t *mmap)
     return r;
   mmap->count = num_mm_entries;
   mmap->entries = mm_entries;
-  return 0;
+  return ROOT_SUCCESS;
 }

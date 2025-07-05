@@ -14,7 +14,7 @@ WARNINGS := \
 	-Winline -Wundef -Wunreachable-code -Wredundant-decls -Wfloat-equal -Wcast-align \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -Wunused-result -pedantic-errors \
-	-Wno-error=unused-function
+	-Wno-error=unused-function -Wno-error=unused-variable
 CFLAGS := \
 	${WARNINGS} -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 	-fno-strict-aliasing -mno-red-zone -fstack-protector-all
@@ -32,7 +32,7 @@ BOOT_TARGET_OBJFILES := ${patsubst %.S,${BUILDDIR}/%.o,${BOOT_TARGET_SRCFILES}}
 BOOT_TARGET_LDFILE := ${BOOT_TARGET_SRCDIR}/boot.ld
 
 BOOT_INCLUDEDIRS := ${BOOTDIR}/include
-BOOT_SRCFILES += ${wildcard ${BOOTDIR}/kern/*.c}
+BOOT_SRCFILES += ${shell find ${BOOTDIR}/kern -name "*.c"}
 BOOT_OBJFILES := ${patsubst %.c,${BUILDDIR}/%.o,${BOOT_SRCFILES}}
 BOOT_DEPFILES := ${BOOT_OBJFILES:.o=.d}
 BOOTLD := ${BUILDDIR}/boot.ld
@@ -58,19 +58,19 @@ ${BOOTELF}: ${BOOT_TARGET_OBJFILES} ${BOOT_OBJFILES} ${FONTOBJ} ${BOOTLD}
 ${BOOTLD}: ${BOOT_TARGET_LDFILE}
 	ln -sf ${realpath $<} $@
 
-${BUILDDIR}/${BOOTDIR}/kern:
-	mkdir -p ${BUILDDIR}/${BOOTDIR}/kern
-
-${BUILDDIR}/${BOOT_TARGET_SRCDIR}:
-	mkdir -p $@
-
 define MKTARGETDIR
 ${BUILDDIR}/${1}/%.o: ${1}/%.${2} | ${BUILDDIR}/${1}
 	${CC} ${CFLAGS} -MMD ${patsubst %,-I%,${BOOT_INCLUDEDIRS}} $$< -o $$@
+${BUILDDIR}/${1}:
+	mkdir -p $$@
 endef
 
 ${eval ${call MKTARGETDIR,${BOOT_TARGET_SRCDIR},S}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern,c}}
+${eval ${call MKTARGETDIR,${BOOTDIR}/kern/cmd,c}}
+${eval ${call MKTARGETDIR,${BOOTDIR}/kern/console,c}}
+${eval ${call MKTARGETDIR,${BOOTDIR}/kern/i386,c}}
+${eval ${call MKTARGETDIR,${BOOTDIR}/kern/memory,c}}
 
 clean:
 	rm -rf ${BUILDDIR}

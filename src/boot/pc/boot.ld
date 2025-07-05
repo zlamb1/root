@@ -24,6 +24,7 @@ SECTIONS
         *(.rodata)
         *(.bss)
         *(.eh_frame)
+        FILL(0)
         . = ALIGN(512);
         _estage2 = .;
     }
