@@ -13,8 +13,8 @@ WARNINGS := \
 	-Wmissing-prototypes -Wno-missing-braces -Wno-missing-field-initializers -Wbad-function-cast \
 	-Winline -Wundef -Wunreachable-code -Wredundant-decls -Wfloat-equal -Wcast-align \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
-	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -Wunused-result -pedantic-errors \
-	-Wno-error=unused-function -Wno-error=unused-variable
+	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -pedantic-errors \
+	-Wno-unused
 CFLAGS := \
 	${WARNINGS} -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 	-fno-strict-aliasing -mno-red-zone -fstack-protector-all
@@ -46,6 +46,10 @@ FONTOBJ := ${BUILDDIR}/font.o
 
 all: ${BOOTBIN}
 
+usb: ${BOOTBIN}
+	@echo "\033[31;1mWARNING:\033[0m; this will clobber /dev/sdb! Edit sdX to the proper USB device before usage."
+	sudo dd if=${BOOTBIN} of=/dev/sdb bs=8M
+
 ${FONTOBJ}: ${FONTSRC}
 	objcopy -O elf32-i386 -B i386 -I binary $< $@
 
@@ -69,6 +73,7 @@ ${eval ${call MKTARGETDIR,${BOOT_TARGET_SRCDIR},S}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern,c}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern/cmd,c}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern/console,c}}
+${eval ${call MKTARGETDIR,${BOOTDIR}/kern/disk,c}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern/i386,c}}
 ${eval ${call MKTARGETDIR,${BOOTDIR}/kern/memory,c}}
 

@@ -88,8 +88,11 @@ root_malloc (root_size_t sz)
 void *
 root_realloc (void *p, root_size_t sz)
 {
-  root_page_t *page = root_get_page (p);
+  root_page_t *page;
   void *np;
+  if (p == NULL)
+    return root_malloc (sz);
+  page = root_get_page (p);
   if (page == NULL)
     root_panic ("realloc: invalid page");
   if (page->flags & ROOT_PG_FLAG_FREE)

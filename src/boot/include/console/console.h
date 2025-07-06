@@ -46,6 +46,7 @@ typedef struct root_console_t
   void (*putchar) (struct root_console_t *con, char ch);
   void (*moveto) (struct root_console_t *con, root_u16 x, root_u16 y);
   void (*advance) (struct root_console_t *con);
+  void (*scroll) (struct root_console_t *con);
   void (*newline) (struct root_console_t *con);
   void (*clear) (struct root_console_t *con, root_u32 bg);
 } root_console_t;
@@ -69,6 +70,7 @@ console_putchar_sync (root_console_t *con, char ch)
 void console_putchar (struct root_console_t *con, char ch);
 void console_moveto (root_console_t *con, root_u16 x, root_u16 y);
 void console_advance (root_console_t *con);
+void console_scroll (root_console_t *con);
 void console_newline (root_console_t *con);
 void console_clear (root_console_t *con, root_u32 bg);
 

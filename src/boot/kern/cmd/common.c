@@ -2,6 +2,7 @@
 #include "console/print.h"
 #include "console/sh.h"
 #include "console/welcome.h"
+#include "machine.h"
 #include "memory/alloc.h"
 #include "memory/page.h"
 #include "types.h"
@@ -166,6 +167,7 @@ root_register_common_commands (root_shell_t *sh)
   root_register_cmd (sh, "fg", root_cmd_fg);
   root_register_cmd (sh, "bg", root_cmd_bg);
   root_register_cmd (sh, "args", root_cmd_args);
+  root_register_cmd (sh, "reboot", root_cmd_reboot);
   root_register_cmd (sh, "welcome", root_cmd_welcome);
 }
 
@@ -216,4 +218,12 @@ root_cmd_args (int argc, char **argv)
 {
   for (int i = 0; i < argc; i++)
     root_printf ("%s\n", argv[i]);
+}
+
+void
+root_cmd_reboot (int argc, char **argv)
+{
+  (void) argc;
+  (void) argv;
+  root_mach_reboot ();
 }

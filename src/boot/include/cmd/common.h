@@ -22,5 +22,6 @@ void root_cmd_clear (int argc, char **argv);
 void root_cmd_fg (int argc, char **argv);
 void root_cmd_bg (int argc, char **argv);
 void root_cmd_args (int argc, char **argv);
+void root_cmd_reboot (int argc, char **argv);
 
 #endif

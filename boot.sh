@@ -10,5 +10,5 @@ else
     qemu-system-i386 \
         -drive id=disk,file=build/boot.bin,format=raw,index=0,media=disk,if=none \
         -device ide-hd,drive=disk,bus=ide.0 \
-        -nic none -m 4G
+        -nic none -m 4G -s
 fi

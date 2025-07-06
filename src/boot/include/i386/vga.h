@@ -37,4 +37,6 @@ void vga_putcursor (struct root_console_t *con, root_u16 x, root_u16 y);
 void vga_setcursor (struct root_console_t *con, root_u8 enabled);
 void vga_blinkcursor (struct root_console_t *con);
 
+void vga_scroll (struct root_console_t *con);
+
 #endif

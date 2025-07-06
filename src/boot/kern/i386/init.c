@@ -4,6 +4,7 @@
 #include "console/gfx_mode.h"
 #include "console/print.h"
 #include "console/psf2.h"
+#include "disk/ata.h"
 #include "i386/isr.h"
 #include "i386/pic.h"
 #include "i386/pit.h"
@@ -11,9 +12,12 @@
 #include "i386/vga.h"
 #include "machine.h"
 #include "memory/alloc.h"
+#include "memory/malloc.h"
 #include "panic.h"
 #include "task.h"
 #include "types.h"
+
+extern root_u8 DRIVE_NUMBER;
 
 extern void *root_pit_irq[];
 extern void *root_kb_irq[];
@@ -29,6 +33,18 @@ root_clock (void)
 
 static root_vga_console_t vga_console;
 static root_gfx_console_t gfx_console;
+
+static void
+root_register_pci_devices (root_pci_devices *devices)
+{
+  for (root_size_t i = 0; i < devices->ndevices; i++)
+    {
+      root_pci_device_header_t *hdr = devices->headers + i;
+      /* IDE controller */
+      if (hdr->class == 1 && hdr->subclass == 1)
+        root_init_ata_controller (hdr);
+    }
+}
 
 root_err_t
 root_machine_init (void)
@@ -57,7 +73,6 @@ root_machine_init (void)
       font = root_ps2f_get_font ();
       gfx_console_init (&gfx_console, &gfx_mode, &font);
       root_initprint (&gfx_console.base);
-      (void) gfx_console;
     }
   while (0);
   root_init_pit (ROOT_PIT_FREQ_MS_DIV);
@@ -67,5 +82,12 @@ root_machine_init (void)
   root_load_idt ();
   root_pic_init (0x20, 0x28);
   root_mach_sti ();
+  {
+    root_pci_devices devices;
+    if (root_pci_enumerate (&devices) != ROOT_SUCCESS)
+      root_panic ("failed to enumerate PCI devices");
+    root_register_pci_devices (&devices);
+    root_free (devices.headers);
+  }
   return ROOT_SUCCESS;
 }

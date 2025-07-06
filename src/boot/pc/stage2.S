@@ -14,9 +14,9 @@ start2:
     jmp stop
     1:
     cli
-
     calll enter_prot
 .code32
+    and $-16, %esp
     jmp root_main
 
 .extern root_main

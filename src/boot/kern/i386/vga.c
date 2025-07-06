@@ -30,13 +30,16 @@ vga_console_init (root_vga_console_t *con)
   con->fb = (root_u8 *) 0xB8000;
   con->base.width = 80;
   con->base.height = 25;
+  con->base.scroll_height = 25;
   con->base.fg = ROOT_VGA_COLOR_GREEN;
+  con->base.bg = ROOT_VGA_COLOR_BLACK;
   con->base.putglyph = vga_putglyph;
   con->base.putvrow = vga_putvrow;
   con->base.fillvrow = vga_fillvrow;
   con->base.putcursor = vga_putcursor;
   con->base.setcursor = vga_setcursor;
   con->base.blinkcursor = vga_blinkcursor;
+  con->base.scroll = vga_scroll;
   return ROOT_SUCCESS;
 }
 
@@ -60,9 +63,10 @@ vga_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row)
 void
 vga_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg)
 {
-  (void) con;
-  (void) vrow;
-  (void) bg;
+  root_vga_console_t *vga = (root_vga_console_t *) con;
+  root_u8 *fb = root_get_fb (vga->fb, 0, vrow, con->width << 1);
+  root_u16 val = ((con->fg & 0xF) | ((bg & 0xF) << 4)) << 8;
+  root_memsetw (fb, val, con->width);
 }
 
 void
@@ -106,11 +110,11 @@ vga_blinkcursor (struct root_console_t *con)
   (void) con;
 }
 
-/*void
-vga_clear (struct root_console_t *con, root_u32 bg)
+void
+vga_scroll (struct root_console_t *con)
 {
   root_vga_console_t *vga = (root_vga_console_t *) con;
-  root_u16 color = ((con->fg & 0xF) | ((bg & 0xF) << 4)) << 8;
-  con->bg = bg;
-  root_memset16 (vga->fb, color, con->width * con->height);
-} */
+  root_size_t rowsize = con->width << 1;
+  root_memmove (vga->fb, vga->fb + rowsize, rowsize * con->scroll_height - 1);
+  con->y = con->scroll_height - 1;
+}

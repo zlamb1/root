@@ -10,6 +10,7 @@
 
 start:
     cli
+    mov %dl, DRIVE_NUMBER
     xor %ax, %ax
     mov %ax, %ds
     mov %ax, %ss
@@ -38,6 +39,11 @@ DISK_ADDRESS_PACKET:
     .short 0x0000
     .long  0x0001
     .long  0x0000
+
+.global DRIVE_NUMBER
+
+DRIVE_NUMBER:
+.byte 0x0
 
 . = 446
 

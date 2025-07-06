@@ -35,6 +35,7 @@ console_init (root_console_t *con)
   con->putchar = console_putchar;
   con->moveto = console_moveto;
   con->advance = console_advance;
+  con->scroll = console_scroll;
   con->newline = console_newline;
   con->clear = console_clear;
   return ROOT_SUCCESS;
@@ -59,7 +60,9 @@ console_setoffset (root_console_t *con)
   root_u16 offset = con->offset;
   con->offset = con->y >= con->height ? con->y - con->height + 1 : 0;
   if (con->offset + con->height > con->scroll_height)
-    con->offset = con->scroll_height - con->height - 1;
+    con->offset = con->scroll_height > con->height
+                      ? con->scroll_height - con->height - 1
+                      : 0;
   if (offset != con->offset)
     {
       console_draw (con);
@@ -124,18 +127,22 @@ console_advance (root_console_t *con)
 }
 
 void
+console_scroll (root_console_t *con)
+{
+  con->y = con->scroll_height - 1;
+  con->fillvrow (con, con->head, con->bg);
+  con->head = (con->head + 1) % con->scroll_height;
+  if (!console_setoffset (con))
+    console_draw (con);
+}
+
+void
 console_newline (root_console_t *con)
 {
   con->x = 0;
   con->y++;
   if (con->y >= con->scroll_height)
-    {
-      con->y = con->scroll_height - 1;
-      con->fillvrow (con, con->head, con->bg);
-      con->head = (con->head + 1) % con->scroll_height;
-      if (!console_setoffset (con))
-        console_draw (con);
-    }
+    con->scroll (con);
   else
     console_setoffset (con);
   console_sync_cursor (con);
