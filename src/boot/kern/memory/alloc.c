@@ -26,9 +26,10 @@ root_initalloc (void)
   root_mmap_t mmap;
   root_mm_entry_t *entry, *pm_entry;
   root_size_t top_entry, num_pages;
-  root_err_t err = root_init_mmap (&mmap);
+  root_err_t err;
   root_u64 page_map_sz = 0;
   int first_page = 1;
+  err = root_init_mmap (&mmap);
   root_page_map.pages = NULL;
   root_page_map.num_pages = 0;
   root_page_map.num_upages = 0;

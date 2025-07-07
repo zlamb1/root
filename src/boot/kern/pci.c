@@ -1,4 +1,5 @@
 #include "pci.h"
+#include "disk/ata.h"
 #include "i386/machine_io.h"
 #include "memory/malloc.h"
 #include "memory/page.h"
@@ -7,6 +8,8 @@
 
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA    0xCFC
+
+static root_pci_devmod_t *root = NULL;
 
 static root_u16
 root_pci_read_word (root_u8 bus, root_u8 dev, root_u8 func, root_u8 offset)
@@ -37,65 +40,109 @@ root_pci_read_long (root_u8 bus, root_u8 dev, root_u8 func, root_u8 offset)
   return _long;
 }
 
-static root_pci_device_header_t
-root_pci_read_hdr (root_u8 bus, root_u8 dev, root_u8 func)
+static root_pci_header_t
+root_pci_read_header (root_u8 bus, root_u8 dev, root_u8 func)
 {
-  root_pci_device_header_t hdr = { .bus = bus, .dev = dev, .func = func };
-  hdr.vendor_id = root_pci_read_word (bus, dev, func, 0);
-  hdr.dev_id = root_pci_read_word (bus, dev, func, 2);
-  hdr.prog_if = root_pci_read_word (bus, dev, func, 0x8) >> 8;
-  hdr.subclass = root_pci_read_word (bus, dev, func, 0xA);
-  hdr.class = root_pci_read_word (bus, dev, func, 0xA) >> 8;
-  hdr.type = root_pci_read_word (bus, dev, func, 0xE);
-  switch (hdr.type & ~0x80)
+  root_pci_header_t header = { .bus = bus, .dev = dev, .func = func };
+  header.vendor_id = root_pci_read_word (bus, dev, func, 0);
+  header.dev_id = root_pci_read_word (bus, dev, func, 2);
+  header.prog_if = root_pci_read_word (bus, dev, func, 0x8) >> 8;
+  header.subclass = root_pci_read_word (bus, dev, func, 0xA);
+  header.class = root_pci_read_word (bus, dev, func, 0xA) >> 8;
+  header.type = root_pci_read_word (bus, dev, func, 0xE);
+  switch (header.type & ~0x80)
     {
     case 0:
-      hdr.gdev.bar0 = root_pci_read_long (bus, dev, func, 0x10);
-      hdr.gdev.bar1 = root_pci_read_long (bus, dev, func, 0x14);
-      hdr.gdev.bar2 = root_pci_read_long (bus, dev, func, 0x18);
-      hdr.gdev.bar3 = root_pci_read_long (bus, dev, func, 0x1C);
-      hdr.gdev.bar4 = root_pci_read_long (bus, dev, func, 0x20);
-      hdr.gdev.bar5 = root_pci_read_long (bus, dev, func, 0x24);
-      hdr.gdev.irq_line = root_pci_read_word (bus, dev, func, 0x3C) & 0xFF;
+      header.ghdr.bar0 = root_pci_read_long (bus, dev, func, 0x10);
+      header.ghdr.bar1 = root_pci_read_long (bus, dev, func, 0x14);
+      header.ghdr.bar2 = root_pci_read_long (bus, dev, func, 0x18);
+      header.ghdr.bar3 = root_pci_read_long (bus, dev, func, 0x1C);
+      header.ghdr.bar4 = root_pci_read_long (bus, dev, func, 0x20);
+      header.ghdr.bar5 = root_pci_read_long (bus, dev, func, 0x24);
+      header.ghdr.irq_line = root_pci_read_word (bus, dev, func, 0x3C) & 0xFF;
       break;
     }
-  return hdr;
+  return header;
 }
 
 static inline root_err_t
-root_pci_device_append (root_pci_devices *devices,
-                        root_pci_device_header_t hdr)
+root_pci_device_append (root_pci_headers_t *headers, root_pci_header_t header)
 {
-  if (devices->ndevices >= devices->cdevices)
+  if (headers->nheaders >= headers->cheaders)
     {
-      root_pci_device_header_t *tmp;
-      devices->cdevices += ROOT_PAGE_SIZE / sizeof (root_pci_device_header_t);
-      tmp = root_realloc (devices->headers, sizeof (root_pci_device_header_t)
-                                                * devices->cdevices);
+      root_pci_header_t *tmp;
+      headers->cheaders += ROOT_PAGE_SIZE / sizeof (root_pci_header_t);
+      tmp = root_realloc (headers->headers,
+                          sizeof (root_pci_header_t) * headers->cheaders);
       if (tmp == NULL)
         return ROOT_ERR_ALLOC;
-      devices->headers = tmp;
+      headers->headers = tmp;
     }
-  devices->headers[devices->ndevices++] = hdr;
+  headers->headers[headers->nheaders++] = header;
+  return ROOT_SUCCESS;
+}
+
+static root_pci_devmod_t *
+root_pci_find_mod (root_u8 cls, root_u8 scls)
+{
+  /* TODO: think about hashmap instead */
+  root_pci_devmod_t *devmod = root;
+  while (devmod != NULL)
+    {
+      if (devmod->cls == cls && devmod->scls == scls)
+        return devmod;
+      devmod = devmod->next;
+    }
+  return NULL;
+}
+
+root_err_t
+root_pci_register_devmod (root_u8 cls, root_u8 scls,
+                          int (*init) (root_pci_header_t *hdr))
+{
+  root_pci_devmod_t *devmod = root_pci_find_mod (cls, scls);
+  if (devmod == NULL)
+    {
+      devmod = root_malloc (sizeof (root_pci_devmod_t));
+      if (devmod == NULL)
+        return ROOT_ERR_ALLOC;
+      devmod->cls = cls;
+      devmod->scls = scls;
+      devmod->init = init;
+      devmod->next = root;
+      root = devmod;
+    }
+  else
+    devmod->init = init;
   return ROOT_SUCCESS;
 }
 
 root_err_t
-root_pci_enumerate (root_pci_devices *devices)
+root_pci_register_devmods (void)
 {
   root_err_t err;
-  if (devices == NULL)
+  if ((err = root_pci_register_devmod (1, 1, root_ata_init_controller))
+      != ROOT_SUCCESS)
+    return err;
+  return ROOT_SUCCESS;
+}
+
+root_err_t
+root_pci_enumerate (root_pci_headers_t *headers)
+{
+  root_err_t err;
+  if (headers == NULL)
     return ROOT_ERR_ARG;
-  root_memset (devices, 0, sizeof (root_pci_devices));
+  root_memset (headers, 0, sizeof (root_pci_headers_t));
   for (root_u16 bus = 0; bus < 256; bus++)
     {
       for (root_u8 device = 0; device < 32; device++)
         {
-          root_pci_device_header_t header;
+          root_pci_header_t header;
           if (root_pci_read_word (bus, device, 0, 0) == 0xFFFF)
             continue;
-          header = root_pci_read_hdr (bus, device, 0);
-          if ((err = root_pci_device_append (devices, header)) != ROOT_SUCCESS)
+          header = root_pci_read_header (bus, device, 0);
+          if ((err = root_pci_device_append (headers, header)) != ROOT_SUCCESS)
             return err;
           if (header.type & 0x80)
             {
@@ -103,13 +150,21 @@ root_pci_enumerate (root_pci_devices *devices)
                 {
                   if (root_pci_read_word (bus, device, func, 0) == 0xFFFF)
                     continue;
-                  header = root_pci_read_hdr (bus, device, func);
-                  if ((err = root_pci_device_append (devices, header))
+                  header = root_pci_read_header (bus, device, func);
+                  if ((err = root_pci_device_append (headers, header))
                       != ROOT_SUCCESS)
                     return err;
                 }
             }
         }
+    }
+  for (root_size_t i = 0; i < headers->nheaders; i++)
+    {
+      root_pci_header_t *header = headers->headers + i;
+      root_pci_devmod_t *devmod
+          = root_pci_find_mod (header->class, header->subclass);
+      if (devmod != NULL)
+        devmod->init (header);
     }
   return ROOT_SUCCESS;
 }

@@ -38,11 +38,7 @@ inline static root_u32 root_printu64_sync (root_u64 n, root_u8 base,
                                            root_u8 capital);
 inline static void root_cursor_sync (void);
 
-inline static void
-root_putchar (char ch)
-{
-  console_putchar_sync (root_console, ch);
-}
+void root_putchar (char ch);
 
 inline static void
 root_fputchar_unsynced (root_fd_t *fd, char ch)

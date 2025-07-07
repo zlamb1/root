@@ -9,9 +9,9 @@
 void
 root_init_pit (root_u16 freq_divider)
 {
-  root_outb (PIT_CHANNEL_0_DATA, freq_divider & 0xFFFF);
-  root_outb (PIT_CHANNEL_0_DATA, freq_divider >> 8);
   root_outb (PIT_CMD_REGISTER,
              ROOT_PIT_CHANNEL_0 | ROOT_PIT_ACCESS_LOBYTE_HIBYTE
                  | ROOT_PIT_OP_MODE_3 | ROOT_PIT_BINARY_MODE);
+  root_outb (PIT_CHANNEL_0_DATA, freq_divider & 0xFFFF);
+  root_outb (PIT_CHANNEL_0_DATA, freq_divider >> 8);
 }

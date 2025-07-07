@@ -26,6 +26,13 @@ root_initprint (root_console_t *con)
   root_console = con;
   stdin = &con->fd.fd;
   stdout = &con->fd.fd;
+  console_clear (root_console, 0);
+}
+
+void
+root_putchar (char ch)
+{
+  console_putchar_sync (root_console, ch);
 }
 
 root_u32
@@ -108,7 +115,6 @@ root_fprintu64 (root_fd_t *fd, root_u64 n, root_u8 base, root_u8 capital)
           else
             ch = capital ? hdigits[digit] - 0x20 : hdigits[digit];
           root_fputchar_unsynced (fd, ch);
-          fd->write (fd, &ch, 1);
         }
       return tmp;
     }

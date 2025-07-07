@@ -48,6 +48,6 @@ typedef struct
   root_ata_drive_t drive;
 } root_ata_disk_t;
 
-root_err_t root_init_ata_controller (root_pci_device_header_t *hdr);
+root_err_t root_ata_init_controller (root_pci_header_t *header);
 
 #endif

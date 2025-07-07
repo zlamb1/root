@@ -35,14 +35,6 @@ root_mach_hlt (void)
 }
 
 void
-root_mach_reboot (void)
-{
-  /* triple fault by unhandled int */
-  __asm__ volatile (
-      "xor %eax, %eax; push %eax; push %eax; lidt (%esp); int $0");
-}
-
-void
 root_mach_store_regs (void)
 {
   __asm__ volatile ("mov %%eax, %0" : "=m"(regs.eax));

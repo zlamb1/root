@@ -8,9 +8,11 @@ protstack:
 
 realidt:
 .quad 0
+.word 0
 
 protidt:
 .quad 0
+.word 0
 
 .section .stage2.utility, "ax"
 
@@ -22,6 +24,7 @@ protidt:
 .global enter_prot
 .global enter_real
 .global root_bios_interrupt
+.global root_mach_reboot
 
 .code16
 enter_prot:
@@ -44,7 +47,6 @@ pmode:
     mov %eax, tmpaddr
     mov protstack, %eax
     mov %eax, %esp
-    mov %eax, %ebp
     mov tmpaddr, %eax
     push %eax
     lidt protidt
@@ -53,12 +55,6 @@ pmode:
 enter_real:
     lgdt gdtdesc
     sidt protidt
-    mov $0x20, %ax
-    mov %ax, %ds
-    mov %ax, %fs
-    mov %ax, %es
-    mov %ax, %gs
-    mov %ax, %ss
     mov %esp, %eax
     add $4, %eax
     mov %eax, protstack
@@ -66,10 +62,16 @@ enter_real:
     mov %eax, STAGE1_STK
     mov $STAGE1_STK, %eax
     mov %eax, %esp
-    mov %eax, %ebp
     ljmp $0x18, $pmode16
 .code16
 pmode16:
+    mov $0x20, %ax
+    mov %ax, %ds
+    mov %ax, %fs
+    mov %ax, %es
+    mov %ax, %gs
+    mov %ax, %ss
+    lidt realidt
     mov %cr0, %eax
     and $0xFFFFFFFE, %eax
     mov %eax, %cr0
@@ -81,13 +83,13 @@ rmode:
     mov %ax, %es
     mov %ax, %gs
     mov %ax, %ss
-    lidt realidt
     sti
     retl
 
 # ;eax - int num
 # ;edx - regs
 .code32
+
 root_bios_interrupt:
     pushf
     push %ebp
@@ -174,3 +176,8 @@ intnum:
     pop %ebp
     popf
     ret
+
+root_mach_reboot:
+    call enter_real
+.code16
+    ljmp $0xFFFF, $0x0

@@ -22,7 +22,9 @@ SECTIONS
         *(.text)
         *(.data)
         *(.rodata)
+        _BSS_START = .;
         *(.bss)
+        _BSS_END = .;
         *(.eh_frame)
         FILL(0)
         . = ALIGN(512);

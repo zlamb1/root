@@ -1,5 +1,4 @@
 #include "disk/ata.h"
-#include "console/print.h"
 #include "i386/machine_io.h"
 #include "types.h"
 
@@ -99,10 +98,10 @@ root_ata_send_command (root_ata_controller_t *dev, root_ata_bus_t bus,
 }
 
 root_err_t
-root_init_ata_controller (root_pci_device_header_t *hdr)
+root_ata_init_controller (root_pci_header_t *header)
 {
   root_ata_controller_t controller;
-  if (hdr == NULL || hdr->class != 1 || hdr->subclass != 1)
+  if (header == NULL || header->class != 1 || header->subclass != 1)
     return ROOT_ERR_ARG;
   // TODO: use PCI bars if in PCI native mode
   controller.io_ports[0] = ATA_PRIMARY_IO_PORT;
@@ -115,8 +114,5 @@ root_init_ata_controller (root_pci_device_header_t *hdr)
                          controller.selected[0]);
   root_ata_select_drive (&controller, ATA_BUS_SECONDARY, 1,
                          controller.selected[1]);
-  root_ata_set_sector_cnt (&controller, ATA_BUS_PRIMARY, 1);
-  root_ata_io_wait (&controller, ATA_BUS_PRIMARY);
-  root_ata_set_lba24 (&controller, ATA_BUS_PRIMARY, 0);
   return ROOT_SUCCESS;
 }

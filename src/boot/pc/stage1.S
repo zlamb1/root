@@ -7,6 +7,7 @@
 .section .stage1.text, "ax"
 
 .global start
+.global prints
 
 start:
     cli
@@ -20,15 +21,32 @@ start:
 
 boot:
     sti
+    mov $ENTER_STRING, %si
+    call prints
     mov $0x41, %ah
     mov $0x55AA, %bx
-    mov $0x80, %dl
+    mov DRIVE_NUMBER, %dl
     int $0x13
     mov $0x42, %ah
     mov $DISK_ADDRESS_PACKET, %si
-    mov $0x80, %dl
+    mov DRIVE_NUMBER, %dl
     int $0x13
+    mov $EXIT_STRING, %si
+    call prints
     ljmp $0, $STAGE2_LOC
+
+prints:
+    1:
+    cld
+    lodsb
+    cmp $0, %al
+    je 2f
+    mov $0xE, %ah
+    mov $0, %bh
+    int $0x10
+    jmp 1b
+    2:
+    ret
 
 .align 4
 DISK_ADDRESS_PACKET:
@@ -44,6 +62,12 @@ DISK_ADDRESS_PACKET:
 
 DRIVE_NUMBER:
 .byte 0x0
+
+ENTER_STRING:
+.asciz "enter stage1\r\n"
+
+EXIT_STRING:
+.asciz "exit stage1\r\n"
 
 . = 446
 
