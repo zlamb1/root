@@ -23,14 +23,32 @@ boot:
     sti
     mov $ENTER_STRING, %si
     call prints
-    mov $0x41, %ah
-    mov $0x55AA, %bx
-    mov DRIVE_NUMBER, %dl
-    int $0x13
+
+    xor %ax, %ax
+    mov %ax, %fs
+read:
+    mov READ_SECTORS, %ax
+    cmp $0, %ax
+    je endread
+    cmp $128, %ax
+    jle 1f
+    mov $128, %ax
+1:
+    mov %ax, DISK_ADDRESS_PACKET_SECTORS
+    mov %fs, DISK_ADDRESS_PACKET_SEGMENT
+    sub %ax, READ_SECTORS
     mov $0x42, %ah
     mov $DISK_ADDRESS_PACKET, %si
     mov DRIVE_NUMBER, %dl
     int $0x13
+    mov %fs, %ax
+    add $0x1000, %ax
+    mov %ax, %fs
+    jmp read
+endread:
+    xor %ax, %ax
+    mov %ax, %fs
+
     mov $EXIT_STRING, %si
     call prints
     ljmp $0, $STAGE2_LOC
@@ -48,12 +66,18 @@ prints:
     2:
     ret
 
+READ_SECTORS:
+.short STAGE2_SEC
+
 .align 4
 DISK_ADDRESS_PACKET:
     .byte  0x0010
     .byte  0x0000
-    .short STAGE2_SEC
+DISK_ADDRESS_PACKET_SECTORS:
+    .short 0x0000
+DISK_ADDRESS_PACKET_ADDRESS:
     .short STAGE2_LOC
+DISK_ADDRESS_PACKET_SEGMENT:
     .short 0x0000
     .long  0x0001
     .long  0x0000

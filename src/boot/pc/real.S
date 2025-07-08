@@ -59,9 +59,9 @@ enter_real:
     add $4, %eax
     mov %eax, protstack
     mov (%esp), %eax
-    mov %eax, STAGE1_STK
-    mov $STAGE1_STK, %eax
-    mov %eax, %esp
+    mov $STAGE1_STK, %ebp
+    mov %ebp, %esp
+    push %eax
     ljmp $0x18, $pmode16
 .code16
 pmode16:
