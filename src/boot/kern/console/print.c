@@ -489,3 +489,23 @@ readc:
   root_cursor_sync ();
   return len;
 }
+
+typedef struct
+{
+  void *buf;
+  root_fd_t base;
+} fdmem_t;
+
+int
+root_sprintf (void *str, const char *fmt, ...)
+{
+  int len;
+  va_list args;
+  root_fdmem_t fd = fcreate_memfd (str, SIZE_MAX);
+  char nul = '\0';
+  va_start (args, fmt);
+  len = root_vfprintf (&fd.fd, fmt, args);
+  fd.fd.write (&fd.fd, &nul, 1);
+  va_end (args);
+  return len;
+}

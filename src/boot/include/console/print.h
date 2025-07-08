@@ -116,6 +116,9 @@ root_printu64_sync (root_u64 n, root_u8 base, root_u8 capital)
 
 int root_vfprintf (root_fd_t *fd, const char *fmt, va_list args);
 
+int __attribute__ ((format (printf, 2, 3)))
+root_sprintf (void *str, const char *fmt, ...);
+
 static inline int __attribute__ ((format (printf, 1, 2)))
 root_printf (const char *fmt, ...)
 {

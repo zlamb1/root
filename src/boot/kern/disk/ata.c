@@ -1,6 +1,14 @@
 #include "disk/ata.h"
+#include "disk/disk.h"
 #include "i386/machine_io.h"
+#include "memory/malloc.h"
+#include "panic.h"
 #include "types.h"
+
+#define ATA_SUCCESS   0
+#define ATA_ENODEV    -1
+#define ATA_EATAPIDEV -2
+#define ATA_EDEVERR   -3
 
 #define ATA_PRIMARY_IO_PORT     0x1F0
 #define ATA_SECONDARY_IO_PORT   0x170
@@ -29,7 +37,8 @@
 #define ATA_STATUS_RDY 0x40
 #define ATA_STATUS_BSY 0x80
 
-#define ATA_CMD_READ 0x20
+#define ATA_CMD_READ     0x20
+#define ATA_CMD_IDENTIFY 0xEC
 
 #define ATA_PRIMARY_IRQ   14
 #define ATA_SECONDARY_IRQ 15
@@ -71,13 +80,77 @@ root_ata_select_drive (root_ata_controller_t *dev, root_ata_bus_t bus,
   root_outb (port, val);
 }
 
-static void
-root_ata_set_sector_cnt (root_ata_controller_t *dev, root_ata_bus_t bus,
-                         root_u16 nsectors)
+static int
+root_ata_identify (root_ata_controller_t *dev, root_ata_bus_t bus,
+                   root_ata_drive_t drive, void *buf)
 {
-  root_u16 port = dev->io_ports[bus & 0x1] + ATA_IO_SECTOR_CNT_REG;
-  /* TODO: support 48-bit LBA addressing */
-  root_outb (port, nsectors);
+  root_u8 status;
+  root_u16 *wbuf = (root_u16 *) buf;
+  root_ata_select_drive (dev, bus, 1, drive);
+  root_ata_io_wait (dev, bus);
+  root_outb (dev->io_ports[bus] + ATA_IO_SECTOR_CNT_REG, 0);
+  root_outb (dev->io_ports[bus] + ATA_IO_LBA_LO_REG, 0);
+  root_outb (dev->io_ports[bus] + ATA_IO_LBA_MID_REG, 0);
+  root_outb (dev->io_ports[bus] + ATA_IO_LBA_HI_REG, 0);
+  root_outb (dev->io_ports[bus] + ATA_IO_CMD_REG, ATA_CMD_IDENTIFY);
+  status = root_inb (dev->io_ports[bus] + ATA_IO_STATUS_REG);
+  if (!status)
+    return ATA_ENODEV;
+  do
+    status = root_inb (dev->io_ports[bus] + ATA_IO_STATUS_REG);
+  while (status & ATA_STATUS_BSY);
+  if (root_inb (dev->io_ports[bus] + ATA_IO_LBA_MID_REG)
+      || root_inb (dev->io_ports[bus] + ATA_IO_LBA_HI_REG))
+    return ATA_EATAPIDEV;
+  do
+    status = root_inb (dev->io_ports[bus] + ATA_IO_STATUS_REG);
+  while (!(status & ATA_STATUS_ERR) && !(status & ATA_STATUS_DRQ));
+  if (status & ATA_STATUS_ERR)
+    return ATA_EDEVERR;
+  for (int i = 0; i < 256; i++)
+    *wbuf++ = root_inw (dev->io_ports[bus] + ATA_IO_DATA_REG);
+  return ATA_SUCCESS;
+}
+
+static root_err_t
+root_ata_controller_read (root_ata_controller_t *dev, root_ata_bus_t bus,
+                          root_ata_drive_t drive, root_size_t sector,
+                          void *buf, root_size_t nsectors)
+{
+  root_u16 *wbuf;
+  if (dev == NULL || buf == NULL || !nsectors)
+    return ROOT_ERR_ARG;
+  bus &= 1;
+  drive &= 1;
+  // TODO: handle oob reads
+  if (dev->selected[bus] != drive)
+    {
+      root_ata_select_drive (dev, bus, 1, drive);
+      root_ata_io_wait (dev, bus);
+    }
+  wbuf = (root_u16 *) buf;
+  while (nsectors)
+    {
+      root_size_t read = nsectors > 256 ? 256 : nsectors;
+      root_outb (dev->io_ports[bus] + ATA_IO_SECTOR_CNT_REG,
+                 read == 256 ? 0 : read);
+      root_outb (dev->io_ports[bus] + ATA_IO_LBA_LO_REG, sector);
+      root_outb (dev->io_ports[bus] + ATA_IO_LBA_MID_REG, sector >> 8);
+      root_outb (dev->io_ports[bus] + ATA_IO_LBA_HI_REG, sector >> 16);
+      // TODO: set last 4 bits of 28-bit LBA
+      root_outb (dev->io_ports[bus] + ATA_IO_CMD_REG, ATA_CMD_READ);
+      nsectors -= read;
+      while (read--)
+        {
+          root_err_t err = root_ata_poll (dev, bus);
+          if (err != ROOT_SUCCESS)
+            return ROOT_EDEV;
+          for (int i = 0; i < 256; i++)
+            *wbuf++ = root_inw (dev->io_ports[bus] + ATA_IO_DATA_REG);
+          root_ata_io_wait (dev, bus);
+        }
+    }
+  return ROOT_SUCCESS;
 }
 
 static void
@@ -100,19 +173,79 @@ root_ata_send_command (root_ata_controller_t *dev, root_ata_bus_t bus,
 root_err_t
 root_ata_init_controller (root_pci_header_t *header)
 {
-  root_ata_controller_t controller;
+  uint64_t buf[64];
+  int *lbuf = (int *) buf;
+  short *wbuf = (short *) buf;
+
+  root_ata_controller_t *controller;
   if (header == NULL || header->class != 1 || header->subclass != 1)
     return ROOT_ERR_ARG;
+
+  controller = root_malloc (sizeof (root_ata_controller_t));
+  if (controller == NULL)
+    return ROOT_ERR_ALLOC;
+
   // TODO: use PCI bars if in PCI native mode
-  controller.io_ports[0] = ATA_PRIMARY_IO_PORT;
-  controller.io_ports[1] = ATA_SECONDARY_IO_PORT;
-  controller.ctrl_ports[0] = ATA_PRIMARY_CTRL_PORT;
-  controller.ctrl_ports[1] = ATA_SECONDARY_CTRL_PORT;
-  controller.selected[0] = 0;
-  controller.selected[1] = 0;
-  root_ata_select_drive (&controller, ATA_BUS_PRIMARY, 1,
-                         controller.selected[0]);
-  root_ata_select_drive (&controller, ATA_BUS_SECONDARY, 1,
-                         controller.selected[1]);
+  controller->io_ports[0] = ATA_PRIMARY_IO_PORT;
+  controller->io_ports[1] = ATA_SECONDARY_IO_PORT;
+
+  controller->ctrl_ports[0] = ATA_PRIMARY_CTRL_PORT;
+  controller->ctrl_ports[1] = ATA_SECONDARY_CTRL_PORT;
+
+  for (int bus = 0; bus <= 1; bus++)
+    {
+      for (int drive = 0; drive <= 1; drive++)
+        switch (root_ata_identify (controller, bus, drive, buf))
+          {
+          case ATA_SUCCESS:
+            {
+              root_err_t err;
+              root_ata_disk_t *disk = root_malloc (sizeof (root_ata_disk_t));
+              if (disk == NULL)
+                {
+                  root_free (controller);
+                  return ROOT_ERR_ALLOC;
+                }
+              disk->controller = controller;
+              disk->bus = bus;
+              disk->drive = drive;
+              if (buf[25])
+                disk->base.nsectors = buf[25];
+              else if (lbuf[30])
+                disk->base.nsectors = lbuf[30];
+              else
+                root_panic ("ata: unknown nsectors");
+              err = root_disk_register (&disk->base);
+              if (err != ROOT_SUCCESS)
+                {
+                  root_free (disk);
+                  root_free (controller);
+                  return err;
+                }
+              controller->refcount++;
+              break;
+            }
+          case ATA_ENODEV:
+            break;
+          default:
+            return ROOT_ERR_ARG;
+          }
+    }
+
+  if (!controller->refcount)
+    {
+      /* no available disks */
+      root_free (controller);
+      return ROOT_SUCCESS;
+    }
+
+  controller->selected[0] = 0;
+  controller->selected[1] = 0;
+
+  root_ata_select_drive (controller, ROOT_ATA_BUS_PRIMARY, 1,
+                         controller->selected[0]);
+  root_ata_select_drive (controller, ROOT_ATA_BUS_SECONDARY, 1,
+                         controller->selected[1]);
+
   return ROOT_SUCCESS;
 }

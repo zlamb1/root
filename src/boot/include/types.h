@@ -10,6 +10,7 @@ typedef enum root_err_t
   ROOT_ERR_ARG = -1,
   ROOT_ERR_ALLOC = -2,
   ROOT_ERR_MEM = -3,
+  ROOT_EDEV = -4,
 } root_err_t;
 
 typedef uint8_t root_u8;

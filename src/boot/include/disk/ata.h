@@ -1,13 +1,14 @@
 #ifndef ROOT_ATA_H
 #define ROOT_ATA_H
 
+#include "disk/disk.h"
 #include "pci.h"
 #include "types.h"
 
 typedef enum
 {
-  ATA_BUS_PRIMARY = 0x0,
-  ATA_BUS_SECONDARY = 0x1
+  ROOT_ATA_BUS_PRIMARY = 0x0,
+  ROOT_ATA_BUS_SECONDARY = 0x1
 } root_ata_bus_t;
 
 typedef enum
@@ -22,14 +23,6 @@ typedef enum
   ROOT_ATA_MODE_PCI
 } root_ata_mode_t;
 
-typedef struct root_disk_t
-{
-  root_size_t nsectors;
-  root_ssize_t (*read) (struct root_disk_t *dev, root_size_t sector, char *buf,
-                        size_t nsectors);
-  struct root_disk_t *next;
-} root_disk_t;
-
 typedef struct
 {
   root_ata_mode_t mode;
@@ -42,7 +35,7 @@ typedef struct
 
 typedef struct
 {
-  root_disk_t disk;
+  root_disk_t base;
   root_ata_controller_t *controller;
   root_ata_bus_t bus;
   root_ata_drive_t drive;
