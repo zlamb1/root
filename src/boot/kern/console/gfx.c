@@ -37,13 +37,17 @@ gfx_drawcursor (root_gfx_console_t *con, int cursor_on, root_u16 x, root_u16 y)
                     + x * gfx_mode->bpp * font->glyph_width;
       for (root_u32 cy = 0; cy < font->glyph_height; cy++)
         {
-          // TODO: consider 24-bit
-          root_u32 color
-              = cursor_on ? con->base.fg
-                          : *((root_u32 *) __builtin_assume_aligned (bb, 4));
-          fb[0] = color;
-          fb[1] = color >> 8;
-          fb[2] = color >> 16;
+          if (cursor_on)
+            {
+              root_u32 color = con->base.fg;
+              for (root_size_t i = 0; i < gfx_mode->bpp; i++, color >>= 8)
+                fb[i] = color;
+            }
+          else
+            {
+              for (root_size_t i = 0; i < gfx_mode->bpp; i++)
+                fb[i] = bb[i];
+            }
           fb += gfx_mode->stride;
           bb += bb_stride;
         }
