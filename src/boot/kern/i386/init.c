@@ -3,7 +3,7 @@
 #include "console/gfx.h"
 #include "console/gfx_mode.h"
 #include "console/print.h"
-#include "console/psf2.h"
+#include "console/psf.h"
 #include "i386/isr.h"
 #include "i386/pic.h"
 #include "i386/pit.h"
@@ -58,7 +58,11 @@ root_machine_init (void)
                                     .stride = video_mode.pitch,
                                     .bpp = video_mode.bpp >> 3,
                                     .fb = video_mode.framebuffer };
-      font = root_ps2f_get_font ();
+      if (root_psf_get_font (&font) != ROOT_SUCCESS)
+        {
+          root_printf ("failed to get font\n");
+          break;
+        }
       gfx_console_init (&gfx_console, &gfx_mode, &font);
       root_initprint (&gfx_console.base);
     }

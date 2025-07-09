@@ -28,18 +28,24 @@ gfx_drawcursor (root_gfx_console_t *con, int cursor_on, root_u16 x, root_u16 y)
     {
       root_gfx_mode_t *gfx_mode = &con->gfx_mode;
       root_font_t *font = &con->font;
+      root_size_t bb_stride = gfx_mode->width * gfx_mode->bpp;
       root_u8 *fb
           = gfx_mode->fb
-            + gfx_mode->stride * font->glyph_height * (y - con->base.offset)
-            + gfx_mode->bpp * font->glyph_width * x;
-      // TODO: SAVE FB CONTENTS!
-      root_u32 color = cursor_on ? con->base.fg : con->base.bg;
+            + (y - con->base.offset) * gfx_mode->stride * font->glyph_height
+            + x * gfx_mode->bpp * font->glyph_width;
+      root_u8 *bb = con->bb + y * bb_stride * font->glyph_height
+                    + x * gfx_mode->bpp * font->glyph_width;
       for (root_u32 cy = 0; cy < font->glyph_height; cy++)
         {
+          // TODO: consider 24-bit
+          root_u32 color
+              = cursor_on ? con->base.fg
+                          : *((root_u32 *) __builtin_assume_aligned (bb, 4));
           fb[0] = color;
           fb[1] = color >> 8;
           fb[2] = color >> 16;
           fb += gfx_mode->stride;
+          bb += bb_stride;
         }
     }
 }

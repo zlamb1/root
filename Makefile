@@ -39,7 +39,7 @@ BOOTLD := ${BUILDDIR}/boot.ld
 BOOTELF := ${BUILDDIR}/boot.elf
 BOOTBIN := ${BUILDDIR}/boot.bin
 
-FONTSRC := font/Lat2-Terminus20x10.psf
+FONTSRC := font/consolefont.psf
 FONTOBJ := ${BUILDDIR}/font.o
 
 .PHONY: all clean font
