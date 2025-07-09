@@ -3,6 +3,7 @@
 #include "i386/machine_io.h"
 #include "memory/malloc.h"
 #include "panic.h"
+#include "string.h"
 #include "types.h"
 
 #define ATA_SUCCESS   0
@@ -151,6 +152,44 @@ root_ata_controller_read (root_ata_controller_t *dev, root_ata_bus_t bus,
         }
     }
   return ROOT_SUCCESS;
+}
+
+static root_ssize_t
+root_ata_disk_read (root_disk_t *disk, void *buf, root_size_t sz)
+{
+  root_ata_disk_t *ata_disk = (root_ata_disk_t *) disk;
+  root_size_t sector = 0;
+  root_ssize_t read = 0;
+  char *cbuf = buf;
+  char tmp[512];
+  if (sz > 512)
+    {
+      root_size_t nsectors = sz >> 9, nbytes;
+      if (nsectors > disk->nsectors)
+        {
+          nsectors = disk->nsectors;
+          sz = nsectors << 9;
+        }
+      nbytes = nsectors << 9;
+      if (root_ata_controller_read (ata_disk->controller, ata_disk->bus,
+                                    ata_disk->drive, 0, cbuf, nsectors)
+          != ROOT_SUCCESS)
+        return -1;
+      cbuf += nbytes;
+      read += nbytes;
+      sz -= nbytes;
+      sector += nsectors;
+    }
+  if (sz)
+    {
+      if (root_ata_controller_read (ata_disk->controller, ata_disk->bus,
+                                    ata_disk->drive, sector, tmp, 1)
+          != ROOT_SUCCESS)
+        return -1;
+      root_memcpy (cbuf, tmp, sz);
+      read += sz;
+    }
+  return read;
 }
 
 static void

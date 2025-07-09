@@ -3,7 +3,6 @@
 #include "console/print.h"
 #include "console/sh.h"
 #include "console/welcome.h"
-#include "disk/disk.h"
 #include "machine.h"
 #include "memory/alloc.h"
 #include "memory/page.h"
@@ -66,16 +65,21 @@ root_atoi_h (const char *str, int *out)
 int
 root_atoi (const char *str, int *out)
 {
-  int n = 0;
+  int n = 0, mod = 1;
   char ch;
   if (str == NULL || out == NULL)
     return ROOT_ERR_ARG;
   ch = *str;
+  if (ch == '-')
+    {
+      mod = -1;
+      ch = *++str;
+    }
   if (ch == '0')
     {
       ch = *++str;
       if (ch == 'x' || ch == 'X')
-        return root_atoi_h (++str, out);
+        return root_atoi_h (++str, out) * mod;
     }
   while (ch != '\0')
     {
@@ -84,7 +88,7 @@ root_atoi (const char *str, int *out)
       n = n * 10 + (ch - '0');
       ch = *++str;
     }
-  *out = n;
+  *out = n * mod;
   return 0;
 }
 
@@ -170,6 +174,7 @@ root_register_common_commands (root_shell_t *sh)
   root_register_cmd (sh, "bg", root_cmd_bg);
   root_register_cmd (sh, "args", root_cmd_args);
   root_register_cmd (sh, "disks", root_cmd_disks);
+  root_register_cmd (sh, "hexdump", root_cmd_hexdump);
   root_register_cmd (sh, "reboot", root_cmd_reboot);
   root_register_cmd (sh, "welcome", root_cmd_welcome);
 }
