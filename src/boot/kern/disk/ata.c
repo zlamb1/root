@@ -157,11 +157,16 @@ root_ata_controller_read (root_ata_controller_t *dev, root_ata_bus_t bus,
 static root_ssize_t
 root_ata_disk_read (root_disk_t *disk, void *buf, root_size_t sz)
 {
-  root_ata_disk_t *ata_disk = (root_ata_disk_t *) disk;
+  root_ata_disk_t *ata_disk;
   root_size_t sector = 0;
   root_ssize_t read = 0;
   char *cbuf = buf;
   char tmp[512];
+  if (disk == NULL)
+    return ROOT_EARG;
+  ata_disk = (root_ata_disk_t *) disk;
+  if (ata_disk->controller == NULL)
+    return ROOT_EARG;
   if (sz > 512)
     {
       root_size_t nsectors = sz >> 9, nbytes;
@@ -209,6 +214,23 @@ root_ata_send_command (root_ata_controller_t *dev, root_ata_bus_t bus,
   root_outb (dev->io_ports[bus & 0x1] + ATA_IO_CMD_REG, cmd);
 }
 
+static root_err_t
+root_ata_disk_free (root_disk_t *disk)
+{
+  root_ata_disk_t *ata_disk;
+  if (disk == NULL)
+    return ROOT_EARG;
+  ata_disk = (root_ata_disk_t *) disk;
+  if (!ata_disk->controller->refcount)
+    root_panic ("ata_disk: invalid controller refcount");
+  if (--ata_disk->controller->refcount)
+    {
+      root_free (ata_disk->controller);
+      ata_disk->controller = NULL;
+    }
+  return ROOT_SUCCESS;
+}
+
 root_err_t
 root_ata_init_controller (root_pci_header_t *header)
 {
@@ -245,9 +267,12 @@ root_ata_init_controller (root_pci_header_t *header)
                   root_free (controller);
                   return ROOT_EALLOC;
                 }
+              root_memset (disk, 0, sizeof (root_ata_disk_t));
               disk->controller = controller;
               disk->bus = bus;
               disk->drive = drive;
+              disk->base.read = root_ata_disk_read;
+              disk->base.free = root_ata_disk_free;
               if (buf[25])
                 disk->base.nsectors = buf[25];
               else if (lbuf[30])

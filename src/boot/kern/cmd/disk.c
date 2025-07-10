@@ -12,7 +12,10 @@ root_cmd_disks (int argc, char **argv)
   (void) argv;
   while (disk != NULL)
     {
+      root_partition_t *part = disk->parts;
       root_printf ("%s\n", disk->name);
+      for (int i = 0; part != NULL; i++, part = part->next)
+        root_printf ("%s,p%i\n", disk->name, i);
       disk = root_disk_iterate (disk);
     }
 }
