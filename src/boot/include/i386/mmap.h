@@ -14,15 +14,15 @@ typedef enum root_mm_type_t
 
 typedef struct root_mm_entry_t
 {
-  root_u64 base;
-  root_u64 length;
-  root_u32 type;
-  root_u32 acpi_attribs;
+  root_uint64_t base;
+  root_uint64_t length;
+  root_uint32_t type;
+  root_uint32_t acpi_attribs;
 } __attribute__ ((packed)) root_mm_entry_t;
 
 typedef struct root_mmap_t
 {
-  root_u32 count;
+  root_uint32_t count;
   root_mm_entry_t *entries;
 } root_mmap_t;
 

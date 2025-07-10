@@ -7,7 +7,7 @@
 #define PIT_CMD_REGISTER   0x43
 
 void
-root_init_pit (root_u16 freq_divider)
+root_init_pit (root_uint16_t freq_divider)
 {
   root_outb (PIT_CMD_REGISTER,
              ROOT_PIT_CHANNEL_0 | ROOT_PIT_ACCESS_LOBYTE_HIBYTE

@@ -26,6 +26,6 @@
 #define ROOT_PIT_CHANNEL_2            (0x2 << 6)
 #define ROOT_PIT_READBACK             (0x3 << 6)
 
-void root_init_pit (root_u16 freq_divider);
+void root_init_pit (root_uint16_t freq_divider);
 
 #endif

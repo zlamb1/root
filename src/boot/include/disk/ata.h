@@ -26,11 +26,11 @@ typedef enum
 typedef struct
 {
   root_ata_mode_t mode;
-  root_u16 io_ports[2];
-  root_u16 ctrl_ports[2];
+  root_uint16_t io_ports[2];
+  root_uint16_t ctrl_ports[2];
   root_ata_drive_t selected[2];
-  root_u8 bus_mastering;
-  root_u8 refcount;
+  root_uint8_t bus_mastering;
+  root_uint8_t refcount;
 } root_ata_controller_t;
 
 typedef struct

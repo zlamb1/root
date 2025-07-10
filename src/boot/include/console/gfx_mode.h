@@ -6,10 +6,10 @@
 // TODO: use masks
 typedef struct root_gfx_mode_t
 {
-  root_u16 width, height;
+  root_uint16_t width, height;
   root_size_t stride;
   root_size_t bpp; // bytes per pixel
-  root_u8 *fb;
+  root_uint8_t *fb;
 } root_gfx_mode_t;
 
 #endif

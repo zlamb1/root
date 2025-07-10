@@ -11,7 +11,7 @@ root_err_t
 root_initshell (root_shell_t *sh)
 {
   if (sh == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   sh->sz = 0;
   sh->cap = 0;
   sh->buf = root_alloc_page ();
@@ -19,7 +19,7 @@ root_initshell (root_shell_t *sh)
   sh->cmds_cap = ROOT_PAGE_SIZE / sizeof (root_command_t);
   sh->cmds = root_alloc_page ();
   if (sh->buf == NULL || sh->cmds == NULL)
-    return ROOT_ERR_ALLOC;
+    return ROOT_EALLOC;
   sh->cap = ROOT_PAGE_SIZE;
   return ROOT_SUCCESS;
 }
@@ -29,7 +29,7 @@ root_register_cmd (root_shell_t *sh, const char *name, cmd_func func)
 {
   root_command_t *cmd;
   if (sh->num_cmds >= sh->cmds_cap)
-    return ROOT_ERR_ALLOC;
+    return ROOT_EALLOC;
   cmd = sh->cmds + sh->num_cmds++;
   cmd->name_len = root_strlen (name);
   cmd->name = name;

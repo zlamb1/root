@@ -48,7 +48,7 @@ static void
 root_ata_io_wait (root_ata_controller_t *dev, root_ata_bus_t bus)
 {
   /* wait ~400ns */
-  root_u16 port = dev->ctrl_ports[bus & 0x1] + ATA_CTRL_ALT_STATUS_REG;
+  root_uint16_t port = dev->ctrl_ports[bus & 0x1] + ATA_CTRL_ALT_STATUS_REG;
   for (int i = 0; i < 15; i++)
     root_inb (port);
 }
@@ -56,8 +56,8 @@ root_ata_io_wait (root_ata_controller_t *dev, root_ata_bus_t bus)
 static int
 root_ata_poll (root_ata_controller_t *dev, root_ata_bus_t bus)
 {
-  root_u16 port = dev->ctrl_ports[bus & 0x1] + ATA_CTRL_ALT_STATUS_REG;
-  root_u8 alt_status;
+  root_uint16_t port = dev->ctrl_ports[bus & 0x1] + ATA_CTRL_ALT_STATUS_REG;
+  root_uint8_t alt_status;
   do
     alt_status = root_inb (port);
   while (
@@ -72,10 +72,10 @@ root_ata_poll (root_ata_controller_t *dev, root_ata_bus_t bus)
 
 static void
 root_ata_select_drive (root_ata_controller_t *dev, root_ata_bus_t bus,
-                       root_u8 use_lba, root_ata_drive_t drive)
+                       root_uint8_t use_lba, root_ata_drive_t drive)
 {
-  root_u16 port = dev->io_ports[bus & 0x1] + ATA_IO_DRV_SEL_REG;
-  root_u8 val = 0xA0;
+  root_uint16_t port = dev->io_ports[bus & 0x1] + ATA_IO_DRV_SEL_REG;
+  root_uint8_t val = 0xA0;
   val |= (drive & 0x1) << 4;
   val |= (use_lba & 0x1) << 6;
   root_outb (port, val);
@@ -85,8 +85,8 @@ static int
 root_ata_identify (root_ata_controller_t *dev, root_ata_bus_t bus,
                    root_ata_drive_t drive, void *buf)
 {
-  root_u8 status;
-  root_u16 *wbuf = (root_u16 *) buf;
+  root_uint8_t status;
+  root_uint16_t *wbuf = (root_uint16_t *) buf;
   root_ata_select_drive (dev, bus, 1, drive);
   root_ata_io_wait (dev, bus);
   root_outb (dev->io_ports[bus] + ATA_IO_SECTOR_CNT_REG, 0);
@@ -118,9 +118,9 @@ root_ata_controller_read (root_ata_controller_t *dev, root_ata_bus_t bus,
                           root_ata_drive_t drive, root_size_t sector,
                           void *buf, root_size_t nsectors)
 {
-  root_u16 *wbuf;
+  root_uint16_t *wbuf;
   if (dev == NULL || buf == NULL || !nsectors)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   bus &= 1;
   drive &= 1;
   // TODO: handle oob reads
@@ -129,7 +129,7 @@ root_ata_controller_read (root_ata_controller_t *dev, root_ata_bus_t bus,
       root_ata_select_drive (dev, bus, 1, drive);
       root_ata_io_wait (dev, bus);
     }
-  wbuf = (root_u16 *) buf;
+  wbuf = (root_uint16_t *) buf;
   while (nsectors)
     {
       root_size_t read = nsectors > 256 ? 256 : nsectors;
@@ -194,9 +194,9 @@ root_ata_disk_read (root_disk_t *disk, void *buf, root_size_t sz)
 
 static void
 root_ata_set_lba24 (root_ata_controller_t *dev, root_ata_bus_t bus,
-                    root_u32 lba24)
+                    root_uint32_t lba24)
 {
-  root_u16 io_port = dev->io_ports[bus & 0x1];
+  root_uint16_t io_port = dev->io_ports[bus & 0x1];
   root_outb (io_port + ATA_IO_LBA_LO_REG, lba24);
   root_outb (io_port + ATA_IO_LBA_MID_REG, lba24 >> 8);
   root_outb (io_port + ATA_IO_LBA_HI_REG, lba24 >> 16);
@@ -204,7 +204,7 @@ root_ata_set_lba24 (root_ata_controller_t *dev, root_ata_bus_t bus,
 
 static void
 root_ata_send_command (root_ata_controller_t *dev, root_ata_bus_t bus,
-                       root_u8 cmd)
+                       root_uint8_t cmd)
 {
   root_outb (dev->io_ports[bus & 0x1] + ATA_IO_CMD_REG, cmd);
 }
@@ -218,11 +218,11 @@ root_ata_init_controller (root_pci_header_t *header)
 
   root_ata_controller_t *controller;
   if (header == NULL || header->class != 1 || header->subclass != 1)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
 
   controller = root_malloc (sizeof (root_ata_controller_t));
   if (controller == NULL)
-    return ROOT_ERR_ALLOC;
+    return ROOT_EALLOC;
 
   // TODO: use PCI bars if in PCI native mode
   controller->io_ports[0] = ATA_PRIMARY_IO_PORT;
@@ -243,7 +243,7 @@ root_ata_init_controller (root_pci_header_t *header)
               if (disk == NULL)
                 {
                   root_free (controller);
-                  return ROOT_ERR_ALLOC;
+                  return ROOT_EALLOC;
                 }
               disk->controller = controller;
               disk->bus = bus;
@@ -267,7 +267,7 @@ root_ata_init_controller (root_pci_header_t *header)
           case ATA_ENODEV:
             break;
           default:
-            return ROOT_ERR_ARG;
+            return ROOT_EARG;
           }
     }
 

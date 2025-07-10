@@ -13,8 +13,9 @@
 #define CRTC_CURSOR_HIGH_LOC_REG 0x00E
 #define CRTC_CURSOR_LOW_LOC_REG  0x00F
 
-static root_u8 *
-root_get_fb (root_u8 *fb, root_u16 x, root_u16 y, root_u16 pitch)
+static root_uint8_t *
+root_get_fb (root_uint8_t *fb, root_uint16_t x, root_uint16_t y,
+             root_uint16_t pitch)
 {
   return fb + (y * pitch) + (x << 1);
 }
@@ -22,12 +23,12 @@ root_get_fb (root_u8 *fb, root_u16 x, root_u16 y, root_u16 pitch)
 root_err_t
 vga_console_init (root_vga_console_t *con)
 {
-  root_err_t err = ROOT_ERR_ARG;
+  root_err_t err = ROOT_EARG;
   if (con == NULL || (err = console_init (&con->base)) != ROOT_SUCCESS)
     return err;
   root_outb (CRTC_ADDRESS_REG, CRTC_MAX_SCANLINE_REG);
   con->max_scanline = root_inb (CRTC_DATA_REG) & 0x1F;
-  con->fb = (root_u8 *) 0xB8000;
+  con->fb = (root_uint8_t *) 0xB8000;
   con->base.width = 80;
   con->base.height = 25;
   con->base.scroll_height = 25;
@@ -44,16 +45,17 @@ vga_console_init (root_vga_console_t *con)
 }
 
 void
-vga_putglyph (struct root_console_t *con, char ch, root_u16 x, root_u16 y)
+vga_putglyph (struct root_console_t *con, char ch, root_uint16_t x,
+              root_uint16_t y)
 {
   root_vga_console_t *vga = (root_vga_console_t *) con;
-  root_u8 *fb = root_get_fb (vga->fb, x, y, con->width << 1);
+  root_uint8_t *fb = root_get_fb (vga->fb, x, y, con->width << 1);
   fb[0] = ch;
   fb[1] = (con->fg & 0xF) | ((con->bg & 0xF) << 4);
 }
 
 void
-vga_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row)
+vga_putvrow (struct root_console_t *con, root_uint16_t vrow, root_uint16_t row)
 {
   (void) con;
   (void) vrow;
@@ -61,18 +63,18 @@ vga_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row)
 }
 
 void
-vga_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg)
+vga_fillvrow (struct root_console_t *con, root_uint16_t vrow, root_uint32_t bg)
 {
   root_vga_console_t *vga = (root_vga_console_t *) con;
-  root_u8 *fb = root_get_fb (vga->fb, 0, vrow, con->width << 1);
-  root_u16 val = ((con->fg & 0xF) | ((bg & 0xF) << 4)) << 8;
+  root_uint8_t *fb = root_get_fb (vga->fb, 0, vrow, con->width << 1);
+  root_uint16_t val = ((con->fg & 0xF) | ((bg & 0xF) << 4)) << 8;
   root_memsetw (fb, val, con->width);
 }
 
 void
-vga_putcursor (struct root_console_t *con, root_u16 x, root_u16 y)
+vga_putcursor (struct root_console_t *con, root_uint16_t x, root_uint16_t y)
 {
-  root_u16 pos = y * con->width + x;
+  root_uint16_t pos = y * con->width + x;
   con->ocx = x;
   con->ocy = y;
   root_outb (CRTC_ADDRESS_REG, CRTC_CURSOR_LOW_LOC_REG);
@@ -82,7 +84,7 @@ vga_putcursor (struct root_console_t *con, root_u16 x, root_u16 y)
 }
 
 void
-vga_setcursor (struct root_console_t *con, root_u8 enabled)
+vga_setcursor (struct root_console_t *con, root_uint8_t enabled)
 {
   root_vga_console_t *vga = (root_vga_console_t *) con;
   if (con->cursor_enabled != enabled)

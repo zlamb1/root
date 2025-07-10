@@ -68,7 +68,7 @@ root_atoi (const char *str, int *out)
   int n = 0, mod = 1;
   char ch;
   if (str == NULL || out == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   ch = *str;
   if (ch == '-')
     {
@@ -99,15 +99,15 @@ root_parse_args (char *buf, root_size_t sz, root_args_t *out)
   root_args_t args = { 0 };
   int read = 0;
   if (buf == NULL || out == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   args.buf = root_alloc_pages (1);
   if (args.buf == NULL)
-    return ROOT_ERR_ALLOC;
+    return ROOT_EALLOC;
   args.argv = root_alloc_pages (1);
   if (args.argv == NULL)
     {
       root_free_pages (args.buf);
-      return ROOT_ERR_ALLOC;
+      return ROOT_EALLOC;
     }
   args.buf_cap = ROOT_PAGE_SIZE;
   args.args_cap = ROOT_PAGE_SIZE;
@@ -148,7 +148,7 @@ root_err_t
 root_free_args (root_args_t *args)
 {
   if (args == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   args->bufc = 0;
   args->buf_cap = 0;
   args->argc = 0;

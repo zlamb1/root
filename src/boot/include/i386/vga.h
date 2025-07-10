@@ -23,18 +23,21 @@
 typedef struct root_vga_console_t
 {
   root_console_t base;
-  root_u16 max_scanline;
-  root_u8 *fb;
+  root_uint16_t max_scanline;
+  root_uint8_t *fb;
 } root_vga_console_t;
 
 root_err_t vga_console_init (root_vga_console_t *con);
 
-void vga_putglyph (struct root_console_t *con, char ch, root_u16 x,
-                   root_u16 y);
-void vga_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row);
-void vga_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg);
-void vga_putcursor (struct root_console_t *con, root_u16 x, root_u16 y);
-void vga_setcursor (struct root_console_t *con, root_u8 enabled);
+void vga_putglyph (struct root_console_t *con, char ch, root_uint16_t x,
+                   root_uint16_t y);
+void vga_putvrow (struct root_console_t *con, root_uint16_t vrow,
+                  root_uint16_t row);
+void vga_fillvrow (struct root_console_t *con, root_uint16_t vrow,
+                   root_uint32_t bg);
+void vga_putcursor (struct root_console_t *con, root_uint16_t x,
+                    root_uint16_t y);
+void vga_setcursor (struct root_console_t *con, root_uint8_t enabled);
 void vga_blinkcursor (struct root_console_t *con);
 
 void vga_scroll (struct root_console_t *con);

@@ -5,45 +5,45 @@
 
 typedef struct root_video_mode_t
 {
-  root_u16 attributes;
-  root_u8 window_a;
-  root_u8 window_b;
-  root_u16 granularity;
-  root_u16 window_size;
-  root_u16 segment_a;
-  root_u16 segment_b;
-  root_u32 win_func_ptr;
-  root_u16 pitch;
-  root_u16 width;
-  root_u16 height;
-  root_u8 w_char;
-  root_u8 y_char;
-  root_u8 planes;
-  root_u8 bpp;
-  root_u8 banks;
-  root_u8 memory_model;
-  root_u8 bank_size;
-  root_u8 image_pages;
-  root_u8 reserved0;
-  root_u8 red_mask;
-  root_u8 red_pos;
-  root_u8 green_mask;
-  root_u8 green_pos;
-  root_u8 blue_mask;
-  root_u8 blue_pos;
-  root_u8 reserved_mask;
-  root_u8 reserved_pos;
-  root_u8 color_attributes;
-  root_u8 *framebuffer;
-  root_u32 off_screen_mem_off;
-  root_u32 off_screen_mem_size;
-  root_u8 reserved1[206];
+  root_uint16_t attributes;
+  root_uint8_t window_a;
+  root_uint8_t window_b;
+  root_uint16_t granularity;
+  root_uint16_t window_size;
+  root_uint16_t segment_a;
+  root_uint16_t segment_b;
+  root_uint32_t win_func_ptr;
+  root_uint16_t pitch;
+  root_uint16_t width;
+  root_uint16_t height;
+  root_uint8_t w_char;
+  root_uint8_t y_char;
+  root_uint8_t planes;
+  root_uint8_t bpp;
+  root_uint8_t banks;
+  root_uint8_t memory_model;
+  root_uint8_t bank_size;
+  root_uint8_t image_pages;
+  root_uint8_t reserved0;
+  root_uint8_t red_mask;
+  root_uint8_t red_pos;
+  root_uint8_t green_mask;
+  root_uint8_t green_pos;
+  root_uint8_t blue_mask;
+  root_uint8_t blue_pos;
+  root_uint8_t reserved_mask;
+  root_uint8_t reserved_pos;
+  root_uint8_t color_attributes;
+  root_uint8_t *framebuffer;
+  root_uint32_t off_screen_mem_off;
+  root_uint32_t off_screen_mem_size;
+  root_uint8_t reserved1[206];
 } __attribute__ ((packed)) root_video_mode_t;
 
-int root_vbe_find_best_videomode (root_u16 width, root_u16 height,
-                                  root_u16 depth,
+int root_vbe_find_best_videomode (root_uint16_t width, root_uint16_t height,
+                                  root_uint16_t depth,
                                   root_video_mode_t *video_mode);
 
-void root_vbe_set_videomode (root_u16 mode);
+void root_vbe_set_videomode (root_uint16_t mode);
 
 #endif

@@ -6,7 +6,7 @@
 int root_initalloc (void);
 
 void *root_alloc_page (void);
-void *root_alloc_pages (root_u32 npages);
+void *root_alloc_pages (root_uint32_t npages);
 
 void root_free_pages (void *p);
 

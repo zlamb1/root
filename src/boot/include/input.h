@@ -19,7 +19,7 @@ typedef struct root_input_t
 {
   root_keycode_t keycode;
   root_keystate_t state;
-  root_u8 flags;
+  root_uint8_t flags;
   char ascii;
 } root_input_t;
 

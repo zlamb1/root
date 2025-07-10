@@ -44,15 +44,15 @@ static char ps2_scanset1_to_key_codes[256] = {
 
 void root_recv_sc (void);
 
-static volatile root_u8 head = 0, tail = 0;
-static volatile root_u8 buf[INPUT_BUFFER_MAX];
+static volatile root_uint8_t head = 0, tail = 0;
+static volatile root_uint8_t buf[INPUT_BUFFER_MAX];
 
 static int shifts[2] = { 0 };
 static int alts[2] = { 0 };
 static int caps_lock = 0;
 
-static inline root_u8
-_next (root_u8 n)
+static inline root_uint8_t
+_next (root_uint8_t n)
 {
   return (n + 1) % INPUT_BUFFER_MAX;
 }
@@ -60,8 +60,8 @@ _next (root_u8 n)
 void
 root_recv_sc (void)
 {
-  root_u8 scancode = root_inb (0x60);
-  root_u8 tail_next = _next (tail);
+  root_uint8_t scancode = root_inb (0x60);
+  root_uint8_t tail_next = _next (tail);
   if (tail_next == head)
     return;
   buf[tail] = scancode;
@@ -75,7 +75,7 @@ root_poll_input (root_input_t *input)
   static const char *conv[2]
       = { root_key_code_to_ascii_map, root_key_code_to_ascii_map_alt };
   int index = 0;
-  root_u8 sc;
+  root_uint8_t sc;
 
   if (tail == head)
     return 0;
@@ -84,7 +84,7 @@ root_poll_input (root_input_t *input)
 
   if (sc == 0xE0)
     {
-      root_u8 next = _next (head);
+      root_uint8_t next = _next (head);
       if (next == tail)
         return 0;
       sc = buf[next];

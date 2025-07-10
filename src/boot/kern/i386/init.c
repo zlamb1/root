@@ -17,7 +17,7 @@
 #include "task.h"
 #include "types.h"
 
-extern root_u8 DRIVE_NUMBER;
+extern root_uint8_t DRIVE_NUMBER;
 
 extern void *root_pit_irq[];
 extern void *root_kb_irq[];

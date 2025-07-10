@@ -22,24 +22,25 @@ match_font_and_gfx_size (root_gfx_console_t *con)
 }
 
 static void
-gfx_drawcursor (root_gfx_console_t *con, int cursor_on, root_u16 x, root_u16 y)
+gfx_drawcursor (root_gfx_console_t *con, int cursor_on, root_uint16_t x,
+                root_uint16_t y)
 {
   if (y >= con->base.offset && y - con->base.offset < con->base.height)
     {
       root_gfx_mode_t *gfx_mode = &con->gfx_mode;
       root_font_t *font = &con->font;
       root_size_t bb_stride = gfx_mode->width * gfx_mode->bpp;
-      root_u8 *fb
+      root_uint8_t *fb
           = gfx_mode->fb
             + (y - con->base.offset) * gfx_mode->stride * font->glyph_height
             + x * gfx_mode->bpp * font->glyph_width;
-      root_u8 *bb = con->bb + y * bb_stride * font->glyph_height
-                    + x * gfx_mode->bpp * font->glyph_width;
-      for (root_u32 cy = 0; cy < font->glyph_height; cy++)
+      root_uint8_t *bb = con->bb + y * bb_stride * font->glyph_height
+                         + x * gfx_mode->bpp * font->glyph_width;
+      for (root_uint32_t cy = 0; cy < font->glyph_height; cy++)
         {
           if (cursor_on)
             {
-              root_u32 color = con->base.fg;
+              root_uint32_t color = con->base.fg;
               for (root_size_t i = 0; i < gfx_mode->bpp; i++, color >>= 8)
                 fb[i] = color;
             }
@@ -69,9 +70,9 @@ root_err_t
 gfx_console_init (root_gfx_console_t *con, root_gfx_mode_t *gfx_mode,
                   root_font_t *font)
 {
-  root_err_t error = ROOT_ERR_ARG;
+  root_err_t error = ROOT_EARG;
   root_size_t pages;
-  root_u8 *backbuffer;
+  root_uint8_t *backbuffer;
   if (con == NULL || gfx_mode == NULL || font == NULL
       || (error = console_init (&con->base)) != ROOT_SUCCESS)
     return error;
@@ -81,7 +82,7 @@ gfx_console_init (root_gfx_console_t *con, root_gfx_mode_t *gfx_mode,
   backbuffer = root_alloc_pages (pages);
   // TODO: create non-backbuffer functions
   if (backbuffer == NULL)
-    return ROOT_ERR_ALLOC;
+    return ROOT_EALLOC;
   root_memset (backbuffer, 0, pages << ROOT_PAGE_POW);
   con->fb = gfx_mode->fb;
   con->bb = backbuffer;
@@ -104,23 +105,23 @@ gfx_console_init (root_gfx_console_t *con, root_gfx_mode_t *gfx_mode,
 }
 
 void
-gfx_putglyph (root_console_t *con, char ch, root_u16 x, root_u16 y)
+gfx_putglyph (root_console_t *con, char ch, root_uint16_t x, root_uint16_t y)
 {
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
   root_font_t *font = &gfx_con->font;
   root_size_t rowsize = gfx_con->gfx_mode.width * gfx_con->gfx_mode.bpp;
-  root_u8 *bb
+  root_uint8_t *bb
       = gfx_con->bb
         + ((y + con->head) % con->scroll_height) * rowsize * font->glyph_height
         + x * gfx_con->gfx_mode.bpp * font->glyph_width;
   gfx_con->font.put_glyph (font, bb, ch, con->fg, con->bg, &gfx_con->gfx_mode);
   if (y >= con->offset && y - con->offset < con->height)
     {
-      root_u8 *fb = gfx_con->gfx_mode.fb
-                    + ((y - con->offset) * gfx_con->gfx_mode.stride
-                       * font->glyph_height)
-                    + (x * gfx_con->gfx_mode.bpp * font->glyph_width);
-      for (root_u16 row = 0; row < font->glyph_height; row++)
+      root_uint8_t *fb = gfx_con->gfx_mode.fb
+                         + ((y - con->offset) * gfx_con->gfx_mode.stride
+                            * font->glyph_height)
+                         + (x * gfx_con->gfx_mode.bpp * font->glyph_width);
+      for (root_uint16_t row = 0; row < font->glyph_height; row++)
         {
           root_memcpy (fb, bb, gfx_con->gfx_mode.bpp * font->glyph_width);
           bb += rowsize;
@@ -130,10 +131,10 @@ gfx_putglyph (root_console_t *con, char ch, root_u16 x, root_u16 y)
 }
 
 void
-gfx_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row)
+gfx_putvrow (struct root_console_t *con, root_uint16_t vrow, root_uint16_t row)
 {
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
-  root_u8 *src, *dst;
+  root_uint8_t *src, *dst;
   root_size_t rowsize, fh;
   if (vrow >= con->scroll_height)
     root_panic ("gfx: invalid vrow");
@@ -154,10 +155,10 @@ gfx_putvrow (struct root_console_t *con, root_u16 vrow, root_u16 row)
 }
 
 void
-gfx_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg)
+gfx_fillvrow (struct root_console_t *con, root_uint16_t vrow, root_uint32_t bg)
 {
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
-  root_u8 *dst;
+  root_uint8_t *dst;
   root_size_t rowsize, fh;
   if (vrow >= con->scroll_height)
     root_panic ("gfx: invalid vrow");
@@ -170,7 +171,7 @@ gfx_fillvrow (struct root_console_t *con, root_u16 vrow, root_u32 bg)
 }
 
 void
-gfx_putcursor (root_console_t *con, root_u16 x, root_u16 y)
+gfx_putcursor (root_console_t *con, root_uint16_t x, root_uint16_t y)
 {
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
   gfx_resetcursor (gfx_con);
@@ -186,7 +187,7 @@ gfx_putcursor (root_console_t *con, root_u16 x, root_u16 y)
 }
 
 void
-gfx_setcursor (root_console_t *con, root_u8 enabled)
+gfx_setcursor (root_console_t *con, root_uint8_t enabled)
 {
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
   gfx_con->cursor_task->ticker = 0;
@@ -216,7 +217,7 @@ gfx_cursor_task (void *con)
   root_gfx_console_t *gfx_con = (root_gfx_console_t *) con;
   if (gfx_con->base.cursor_enabled)
     {
-      root_u8 cursor_on = !gfx_con->cursor_on;
+      root_uint8_t cursor_on = !gfx_con->cursor_on;
       gfx_drawcursor (gfx_con, cursor_on, gfx_con->base.ocx,
                       gfx_con->base.ocy);
       gfx_con->cursor_on = cursor_on;

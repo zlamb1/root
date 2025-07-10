@@ -8,8 +8,8 @@
 
 typedef struct root_cursor_t
 {
-  root_u16 x, y;
-  root_u8 enabled;
+  root_uint16_t x, y;
+  root_uint8_t enabled;
 } root_cursor_t;
 
 typedef struct root_console_buf_t
@@ -26,29 +26,33 @@ typedef struct root_console_fd_t
 
 typedef struct root_console_t
 {
-  root_u16 width, height, scroll_height;
-  root_u16 head, offset;
-  root_u16 x, y, ocx, ocy;
-  root_u8 cursor_enabled;
-  root_u8 tab_size;
-  root_u32 fg, bg;
+  root_uint16_t width, height, scroll_height;
+  root_uint16_t head, offset;
+  root_uint16_t x, y, ocx, ocy;
+  root_uint8_t cursor_enabled;
+  root_uint8_t tab_size;
+  root_uint32_t fg, bg;
   root_console_buf_t in;
   root_console_fd_t fd;
   /* impl interface */
-  void (*putglyph) (struct root_console_t *con, char ch, root_u16 x,
-                    root_u16 y);
-  void (*putvrow) (struct root_console_t *con, root_u16 vrow, root_u16 row);
-  void (*fillvrow) (struct root_console_t *con, root_u16 vrow, root_u32 bg);
-  void (*putcursor) (struct root_console_t *con, root_u16 x, root_u16 y);
-  void (*setcursor) (struct root_console_t *con, root_u8 enabled);
+  void (*putglyph) (struct root_console_t *con, char ch, root_uint16_t x,
+                    root_uint16_t y);
+  void (*putvrow) (struct root_console_t *con, root_uint16_t vrow,
+                   root_uint16_t row);
+  void (*fillvrow) (struct root_console_t *con, root_uint16_t vrow,
+                    root_uint32_t bg);
+  void (*putcursor) (struct root_console_t *con, root_uint16_t x,
+                     root_uint16_t y);
+  void (*setcursor) (struct root_console_t *con, root_uint8_t enabled);
   void (*blinkcursor) (struct root_console_t *con);
   /* generic interface */
   void (*putchar) (struct root_console_t *con, char ch);
-  void (*moveto) (struct root_console_t *con, root_u16 x, root_u16 y);
+  void (*moveto) (struct root_console_t *con, root_uint16_t x,
+                  root_uint16_t y);
   void (*advance) (struct root_console_t *con);
   void (*scroll) (struct root_console_t *con);
   void (*newline) (struct root_console_t *con);
-  void (*clear) (struct root_console_t *con, root_u32 bg);
+  void (*clear) (struct root_console_t *con, root_uint32_t bg);
 } root_console_t;
 
 root_err_t console_init (struct root_console_t *con);
@@ -68,11 +72,11 @@ console_putchar_sync (root_console_t *con, char ch)
 }
 
 void console_putchar (struct root_console_t *con, char ch);
-void console_moveto (root_console_t *con, root_u16 x, root_u16 y);
+void console_moveto (root_console_t *con, root_uint16_t x, root_uint16_t y);
 void console_advance (root_console_t *con);
 void console_scroll (root_console_t *con);
 void console_newline (root_console_t *con);
-void console_clear (root_console_t *con, root_u32 bg);
+void console_clear (root_console_t *con, root_uint32_t bg);
 
 void console_offsetup (root_console_t *con);
 void console_offsetdown (root_console_t *con);

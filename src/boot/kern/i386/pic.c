@@ -24,7 +24,7 @@
 #define ICW4_BUF_MASTER 0x0C
 
 void
-root_pic_init (root_u8 pic1_offset, root_u8 pic2_offset)
+root_pic_init (root_uint8_t pic1_offset, root_uint8_t pic2_offset)
 {
   root_outb (PIC1_CMD, ICW1_INIT | ICW1_ICW4);
   root_outb (PIC2_CMD, ICW1_INIT | ICW1_ICW4);
@@ -39,10 +39,10 @@ root_pic_init (root_u8 pic1_offset, root_u8 pic2_offset)
 }
 
 void
-root_pic_mask_irq (root_u8 irq)
+root_pic_mask_irq (root_uint8_t irq)
 {
-  root_u16 port;
-  root_u8 value;
+  root_uint16_t port;
+  root_uint8_t value;
   if (irq < 8)
     port = PIC1_DTA;
   else
@@ -55,10 +55,10 @@ root_pic_mask_irq (root_u8 irq)
 }
 
 void
-root_pic_unmask_irq (root_u8 irq)
+root_pic_unmask_irq (root_uint8_t irq)
 {
-  root_u16 port;
-  root_u8 value;
+  root_uint16_t port;
+  root_uint8_t value;
   if (irq < 8)
     port = PIC1_DTA;
   else
@@ -71,7 +71,7 @@ root_pic_unmask_irq (root_u8 irq)
 }
 
 void
-root_pic_eoi (root_u8 irq)
+root_pic_eoi (root_uint8_t irq)
 {
   if (irq >= 8)
     root_outb (PIC2_CMD, PIC_EOI);

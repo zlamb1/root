@@ -18,7 +18,7 @@ typedef struct root_slab_t
   void *pages;
   root_node_t *freelist;
   struct root_slab_t *prev, *next;
-  root_u8 flags;
+  root_uint8_t flags;
 } root_slab_t;
 
 root_slab_t *root_create_slab (root_size_t sz, root_size_t align);

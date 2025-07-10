@@ -10,10 +10,10 @@
 typedef struct root_mm_entry_event_t
 {
   root_mm_entry_t *entry;
-  root_u64 address;
+  root_uint64_t address;
 } root_mm_entry_event_t;
 
-static root_u16 num_mm_entries;
+static root_uint16_t num_mm_entries;
 static root_mm_entry_t mm_entries[MAX_MM_ENTRIES];
 
 static int
@@ -29,9 +29,9 @@ root_event_cmp (const void *e1, const void *e2)
 static int
 root_fixup_mmap (void)
 {
-  root_u64 last_addr = 0;
-  root_u32 last_type = 0;
-  root_u16 num_new_entries = 0, num_events = 0, num_overlap_entries = 0;
+  root_uint64_t last_addr = 0;
+  root_uint32_t last_type = 0;
+  root_uint16_t num_new_entries = 0, num_events = 0, num_overlap_entries = 0;
   root_mm_entry_t new_entries[MAX_MM_ENTRIES];
   root_mm_entry_event_t events[MAX_MM_EVENTS];
   root_mm_entry_t *overlap_list[MAX_MM_ENTRIES];
@@ -52,7 +52,7 @@ root_fixup_mmap (void)
               root_event_cmp);
   for (int i = 0; i < num_events; i++)
     {
-      root_u32 cur_type = 0;
+      root_uint32_t cur_type = 0;
       root_mm_entry_event_t event = events[i];
       root_mm_entry_t *entry = event.entry;
       if (event.address == entry->base)
@@ -134,7 +134,7 @@ root_init_mmap (root_mmap_t *mmap)
   root_bios_args_t args;
   int r;
   if (mmap == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   num_mm_entries = 0;
   args.ebx = 0;
   do

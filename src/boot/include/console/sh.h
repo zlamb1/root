@@ -14,7 +14,7 @@ typedef struct root_command_t
 
 typedef struct root_shell_t
 {
-  root_u16 sz, cursor, cap;
+  root_uint16_t sz, cursor, cap;
   char *buf;
   root_size_t num_cmds, cmds_cap;
   root_command_t *cmds;

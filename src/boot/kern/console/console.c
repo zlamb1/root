@@ -44,10 +44,10 @@ console_init (root_console_t *con)
 static inline void
 console_draw (root_console_t *con)
 {
-  root_u16 vrow = (con->offset + con->head) % con->scroll_height;
+  root_uint16_t vrow = (con->offset + con->head) % con->scroll_height;
   if (con->offset > con->scroll_height - con->height)
     root_panic ("console_draw: invalid offset");
-  for (root_u16 row = 0; row < con->height; row++)
+  for (root_uint16_t row = 0; row < con->height; row++)
     {
       con->putvrow (con, vrow, row);
       vrow = (vrow + 1) % con->scroll_height;
@@ -57,7 +57,7 @@ console_draw (root_console_t *con)
 static inline int
 console_setoffset (root_console_t *con)
 {
-  root_u16 offset = con->offset;
+  root_uint16_t offset = con->offset;
   con->offset = con->y >= con->height ? con->y - con->height + 1 : 0;
   if (con->offset + con->height > con->scroll_height)
     con->offset = con->scroll_height > con->height
@@ -104,7 +104,7 @@ console_putchar (root_console_t *con, char ch)
 }
 
 void
-console_moveto (root_console_t *con, root_u16 x, root_u16 y)
+console_moveto (root_console_t *con, root_uint16_t x, root_uint16_t y)
 {
   if (x >= con->width || y >= con->scroll_height)
     root_panic ("console_moveto: invalid x/y");
@@ -149,9 +149,9 @@ console_newline (root_console_t *con)
 }
 
 void
-console_clear (root_console_t *con, root_u32 bg)
+console_clear (root_console_t *con, root_uint32_t bg)
 {
-  for (root_u16 vrow = 0; vrow < con->scroll_height; vrow++)
+  for (root_uint16_t vrow = 0; vrow < con->scroll_height; vrow++)
     con->fillvrow (con, vrow, bg);
   con->x = 0;
   con->y = 0;
@@ -212,7 +212,7 @@ _console_read (root_fd_t *fd, char *buf, root_size_t sz)
             case ROOT_KEY_BACKSPACE:
               if (con->in.cursor)
                 {
-                  root_u16 oldx, oldy;
+                  root_uint16_t oldx, oldy;
                   root_size_t cursor;
                   char *pos = con->in.buf + con->in.cursor;
                   con->putchar (con, '\b');
@@ -258,7 +258,7 @@ _console_read (root_fd_t *fd, char *buf, root_size_t sz)
             default:
               if (input.ascii && con->in.sz + 1 < con->in.cap)
                 {
-                  root_u16 oldx = con->x, oldy = con->y;
+                  root_uint16_t oldx = con->x, oldy = con->y;
                   root_size_t cursor = con->in.cursor;
                   char *pos = con->in.buf + con->in.cursor;
                   root_memmove (pos + 1, pos, con->in.sz - con->in.cursor);

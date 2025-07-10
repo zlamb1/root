@@ -5,21 +5,21 @@
 
 typedef struct root_idt_entry32_t
 {
-  root_u16 isr_low;
-  root_u16 kernel_cs;
-  root_u8 reserved;
-  root_u8 attribs;
-  root_u16 isr_high;
+  root_uint16_t isr_low;
+  root_uint16_t kernel_cs;
+  root_uint8_t reserved;
+  root_uint8_t attribs;
+  root_uint16_t isr_high;
 } __attribute__ ((packed)) root_idt_entry32_t;
 
 typedef struct root_idtr_t
 {
-  root_u16 limit;
-  root_u32 base;
+  root_uint16_t limit;
+  root_uint32_t base;
 } __attribute__ ((packed)) root_idtr_t;
 
 void root_init_idt (void);
 void root_load_idt (void);
-void root_set_isr (root_u8 vector, void *isr, root_u8 attribs);
+void root_set_isr (root_uint8_t vector, void *isr, root_uint8_t attribs);
 
 #endif

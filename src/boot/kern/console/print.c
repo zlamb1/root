@@ -35,39 +35,42 @@ root_putchar (char ch)
   console_putchar_sync (root_console, ch);
 }
 
-root_u32
-root_fprinti32 (root_fd_t *fd, root_i32 n, root_u8 base, root_u8 capital)
+root_uint32_t
+root_fprinti32 (root_fd_t *fd, root_int32_t n, root_uint8_t base,
+                root_uint8_t capital)
 {
-  root_u32 sign = 0;
+  root_uint32_t sign = 0;
   if (n < 0)
     {
       sign = 1;
       root_fputchar_unsynced (fd, '-');
       n = -n;
     }
-  return sign + root_fprintu32 (fd, (root_u32) n, base, capital);
+  return sign + root_fprintu32 (fd, (root_uint32_t) n, base, capital);
 }
 
-root_u32
-root_fprinti64 (root_fd_t *fd, root_i64 n, root_u8 base, root_u8 capital)
+root_uint32_t
+root_fprinti64 (root_fd_t *fd, root_int64_t n, root_uint8_t base,
+                root_uint8_t capital)
 {
-  root_u32 sign = 0;
+  root_uint32_t sign = 0;
   if (n < 0)
     {
       sign = 1;
       root_fputchar_unsynced (fd, '-');
       n = -n;
     }
-  return sign + root_fprintu64 (fd, (root_u64) n, base, capital);
+  return sign + root_fprintu64 (fd, (root_uint64_t) n, base, capital);
 }
 
-root_u32
-root_fprintu32 (root_fd_t *fd, root_u32 n, root_u8 base, root_u8 capital)
+root_uint32_t
+root_fprintu32 (root_fd_t *fd, root_uint32_t n, root_uint8_t base,
+                root_uint8_t capital)
 {
   if (n != 0)
     {
-      root_u8 cnt = 0, tmp;
-      root_u8 stack[32];
+      root_uint8_t cnt = 0, tmp;
+      root_uint8_t stack[32];
       while (n != 0)
         {
           stack[cnt++] = n % base;
@@ -77,7 +80,7 @@ root_fprintu32 (root_fd_t *fd, root_u32 n, root_u8 base, root_u8 capital)
       while (cnt)
         {
           char ch;
-          root_u8 digit = stack[--cnt];
+          root_uint8_t digit = stack[--cnt];
           if (digit < 10)
             ch = hdigits[digit];
           else
@@ -93,13 +96,14 @@ root_fprintu32 (root_fd_t *fd, root_u32 n, root_u8 base, root_u8 capital)
     }
 }
 
-root_u32
-root_fprintu64 (root_fd_t *fd, root_u64 n, root_u8 base, root_u8 capital)
+root_uint32_t
+root_fprintu64 (root_fd_t *fd, root_uint64_t n, root_uint8_t base,
+                root_uint8_t capital)
 {
   if (n != 0)
     {
-      root_u8 cnt = 0, tmp;
-      root_u8 stack[64];
+      root_uint8_t cnt = 0, tmp;
+      root_uint8_t stack[64];
       while (n != 0)
         {
           stack[cnt++] = n % base;
@@ -109,7 +113,7 @@ root_fprintu64 (root_fd_t *fd, root_u64 n, root_u8 base, root_u8 capital)
       while (cnt)
         {
           char ch;
-          root_u8 digit = stack[--cnt];
+          root_uint8_t digit = stack[--cnt];
           if (digit < 10)
             ch = hdigits[digit];
           else
@@ -228,7 +232,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
     case 'i':
     case 'd':
       {
-        root_i32 n = va_arg (*args, int);
+        root_int32_t n = va_arg (*args, int);
         if (flags & FMT_FLAG_FORCE_SIGN && n > 0)
           {
             root_fputchar_unsynced (fd, '+');
@@ -244,7 +248,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
       }
     case 'u':
       {
-        root_u32 n = va_arg (*args, unsigned int);
+        root_uint32_t n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_FORCE_SIGN && n != 0)
           {
             root_fputchar_unsynced (fd, '+');
@@ -261,7 +265,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
     case 'b':
     case 'B':
       {
-        root_u32 n = va_arg (*args, unsigned int);
+        root_uint32_t n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');
@@ -273,7 +277,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
       }
     case 'o':
       {
-        root_u32 n = va_arg (*args, unsigned int);
+        root_uint32_t n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');
@@ -285,7 +289,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
     case 'x':
     case 'X':
       {
-        root_u32 n = va_arg (*args, unsigned int);
+        root_uint32_t n = va_arg (*args, unsigned int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');
@@ -323,7 +327,7 @@ printlen_none (root_fd_t *fd, int *len, va_list *args, int flags, int width,
         root_fputchar_unsynced (fd, '0');
         root_fputchar_unsynced (fd, 'x');
         len += 2;
-        len += root_fprintu32 (fd, (root_u32) p, 16, 0);
+        len += root_fprintu32 (fd, (root_uint32_t) p, 16, 0);
         break;
       }
     case 'n':
@@ -353,7 +357,7 @@ printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
     case 'i':
     case 'd':
       {
-        root_i64 n = va_arg (*args, long long int);
+        root_int64_t n = va_arg (*args, long long int);
         if (flags & FMT_FLAG_FORCE_SIGN && n > 0)
           {
             root_fputchar_unsynced (fd, '+');
@@ -369,7 +373,7 @@ printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
       }
     case 'u':
       {
-        root_u64 n = va_arg (*args, unsigned long long int);
+        root_uint64_t n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_FORCE_SIGN && n != 0)
           {
             root_fputchar_unsynced (fd, '+');
@@ -386,7 +390,7 @@ printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
     case 'b':
     case 'B':
       {
-        root_u64 n = va_arg (*args, unsigned long long int);
+        root_uint64_t n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');
@@ -398,7 +402,7 @@ printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
       }
     case 'o':
       {
-        root_u64 n = va_arg (*args, unsigned long long int);
+        root_uint64_t n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');
@@ -410,7 +414,7 @@ printlen_longlong (root_fd_t *fd, int *len, va_list *args, int flags,
     case 'x':
     case 'X':
       {
-        root_u64 n = va_arg (*args, unsigned long long int);
+        root_uint64_t n = va_arg (*args, unsigned long long int);
         if (flags & FMT_FLAG_PREFIX && n > 0)
           {
             root_fputchar_unsynced (fd, '0');

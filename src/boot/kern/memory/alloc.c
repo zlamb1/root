@@ -27,7 +27,7 @@ root_initalloc (void)
   root_mm_entry_t *entry, *pm_entry;
   root_size_t top_entry, num_pages;
   root_err_t err;
-  root_u64 page_map_sz = 0;
+  root_uint64_t page_map_sz = 0;
   int first_page = 1;
   err = root_init_mmap (&mmap);
   root_page_map.pages = NULL;
@@ -37,7 +37,7 @@ root_initalloc (void)
     return err;
   for (root_size_t i = mmap.count; i > 0; i--)
     {
-      root_u64 sz;
+      root_uint64_t sz;
       entry = mmap.entries + (i - 1);
       if (entry->base > MMAP_END)
         continue;
@@ -51,10 +51,10 @@ root_initalloc (void)
       break;
     }
   if (!page_map_sz)
-    return ROOT_ERR_MEM;
+    return ROOT_EMEM;
   for (root_size_t i = top_entry; i > 0; i--)
     {
-      root_u64 length, end, aligned_end;
+      root_uint64_t length, end, aligned_end;
       entry = mmap.entries + (i - 1);
       if (entry->type != ROOT_MM_TYPE_FREE || entry->length < page_map_sz)
         continue;
@@ -81,11 +81,11 @@ root_initalloc (void)
       break;
     }
   if (root_page_map.pages == NULL)
-    return ROOT_ERR_MEM;
+    return ROOT_EMEM;
   root_page_map.num_pages = num_pages;
   for (root_size_t i = 0; i < top_entry; i++)
     {
-      root_u64 aligned_base, end;
+      root_uint64_t aligned_base, end;
       entry = mmap.entries + i;
       if (entry->type != ROOT_MM_TYPE_FREE || entry->base < MMAP_START
           || entry->length < ROOT_PAGE_SIZE)
@@ -100,7 +100,7 @@ root_initalloc (void)
       else
         aligned_base = ROOT_PAGE_ALIGN_UP (entry->base);
       if (entry == pm_entry)
-        end = (root_u64) (root_uintptr_t) root_page_map.pages;
+        end = (root_uint64_t) (root_uintptr_t) root_page_map.pages;
       else
         end = entry->base + entry->length;
       if (first_page && aligned_base + ROOT_PAGE_SIZE <= end)
@@ -184,7 +184,7 @@ root_try_alloc_pages (root_size_t npages, root_uintptr_t page_address,
 }
 
 void *
-root_alloc_pages (root_u32 npages)
+root_alloc_pages (root_uint32_t npages)
 {
   root_uintptr_t page_address = hint_upage;
   void *p = root_try_alloc_pages (
@@ -200,7 +200,7 @@ root_free_pages (void *p)
 {
   root_uintptr_t page_address = (root_uintptr_t) p;
   root_page_t *page;
-  root_u32 npages;
+  root_uint32_t npages;
   if (p == NULL)
     root_panic ("alloc: attempted to free null pointer");
   if (page_address % ROOT_PAGE_SIZE)

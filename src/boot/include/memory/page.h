@@ -19,9 +19,9 @@ struct root_slab_t;
 
 typedef struct root_page_t
 {
-  root_u32 flags;
+  root_uint32_t flags;
   struct root_slab_t *slab;
-  root_u32 npages;
+  root_uint32_t npages;
 } root_page_t;
 
 typedef struct root_page_map_t

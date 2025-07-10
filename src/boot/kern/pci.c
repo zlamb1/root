@@ -11,26 +11,28 @@
 
 static root_pci_devmod_t *root = NULL;
 
-static root_u16
-root_pci_read_word (root_u8 bus, root_u8 dev, root_u8 func, root_u8 offset)
+static root_uint16_t
+root_pci_read_word (root_uint8_t bus, root_uint8_t dev, root_uint8_t func,
+                    root_uint8_t offset)
 {
-  root_u16 word;
-  root_u32 address = offset & 0xFC;
+  root_uint16_t word;
+  root_uint32_t address = offset & 0xFC;
   address |= (func & 0x7) << 8;
   address |= (dev & 0x1F) << 11;
   address |= bus << 16;
   address |= 0x80000000;
   root_outl (PCI_CONFIG_ADDRESS, address);
-  word = (root_u16) ((root_inl (PCI_CONFIG_DATA) >> ((offset & 0x2) << 3))
-                     & 0xFFFF);
+  word = (root_uint16_t) ((root_inl (PCI_CONFIG_DATA) >> ((offset & 0x2) << 3))
+                          & 0xFFFF);
   return word;
 }
 
-static root_u32
-root_pci_read_long (root_u8 bus, root_u8 dev, root_u8 func, root_u8 offset)
+static root_uint32_t
+root_pci_read_long (root_uint8_t bus, root_uint8_t dev, root_uint8_t func,
+                    root_uint8_t offset)
 {
-  root_u32 _long;
-  root_u32 address = offset & 0xFC;
+  root_uint32_t _long;
+  root_uint32_t address = offset & 0xFC;
   address |= (func & 0x7) << 8;
   address |= (dev & 0x1F) << 11;
   address |= bus << 16;
@@ -41,7 +43,7 @@ root_pci_read_long (root_u8 bus, root_u8 dev, root_u8 func, root_u8 offset)
 }
 
 static root_pci_header_t
-root_pci_read_header (root_u8 bus, root_u8 dev, root_u8 func)
+root_pci_read_header (root_uint8_t bus, root_uint8_t dev, root_uint8_t func)
 {
   root_pci_header_t header = { .bus = bus, .dev = dev, .func = func };
   header.vendor_id = root_pci_read_word (bus, dev, func, 0);
@@ -75,7 +77,7 @@ root_pci_device_append (root_pci_headers_t *headers, root_pci_header_t header)
       tmp = root_realloc (headers->headers,
                           sizeof (root_pci_header_t) * headers->cheaders);
       if (tmp == NULL)
-        return ROOT_ERR_ALLOC;
+        return ROOT_EALLOC;
       headers->headers = tmp;
     }
   headers->headers[headers->nheaders++] = header;
@@ -83,7 +85,7 @@ root_pci_device_append (root_pci_headers_t *headers, root_pci_header_t header)
 }
 
 static root_pci_devmod_t *
-root_pci_find_mod (root_u8 cls, root_u8 scls)
+root_pci_find_mod (root_uint8_t cls, root_uint8_t scls)
 {
   /* TODO: think about hashmap instead */
   root_pci_devmod_t *devmod = root;
@@ -97,7 +99,7 @@ root_pci_find_mod (root_u8 cls, root_u8 scls)
 }
 
 root_err_t
-root_pci_register_devmod (root_u8 cls, root_u8 scls,
+root_pci_register_devmod (root_uint8_t cls, root_uint8_t scls,
                           int (*init) (root_pci_header_t *hdr))
 {
   root_pci_devmod_t *devmod = root_pci_find_mod (cls, scls);
@@ -105,7 +107,7 @@ root_pci_register_devmod (root_u8 cls, root_u8 scls,
     {
       devmod = root_malloc (sizeof (root_pci_devmod_t));
       if (devmod == NULL)
-        return ROOT_ERR_ALLOC;
+        return ROOT_EALLOC;
       devmod->cls = cls;
       devmod->scls = scls;
       devmod->init = init;
@@ -132,11 +134,11 @@ root_pci_enumerate (root_pci_headers_t *headers)
 {
   root_err_t err;
   if (headers == NULL)
-    return ROOT_ERR_ARG;
+    return ROOT_EARG;
   root_memset (headers, 0, sizeof (root_pci_headers_t));
-  for (root_u16 bus = 0; bus < 256; bus++)
+  for (root_uint16_t bus = 0; bus < 256; bus++)
     {
-      for (root_u8 device = 0; device < 32; device++)
+      for (root_uint8_t device = 0; device < 32; device++)
         {
           root_pci_header_t header;
           if (root_pci_read_word (bus, device, 0, 0) == 0xFFFF)
@@ -146,7 +148,7 @@ root_pci_enumerate (root_pci_headers_t *headers)
             return err;
           if (header.type & 0x80)
             {
-              for (root_u8 func = 1; func < 8; func++)
+              for (root_uint8_t func = 1; func < 8; func++)
                 {
                   if (root_pci_read_word (bus, device, func, 0) == 0xFFFF)
                     continue;
