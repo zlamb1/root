@@ -1,5 +1,9 @@
 #include "i386/vbe.h"
 #include "i386/bios.h"
+#include "types.h"
+
+#define MAX(A, B) ((A) < (B) ? (B) : (A))
+#define MIN(A, B) ((A) < (B) ? (A) : (B))
 
 typedef struct root_vbe_info_t
 {
@@ -32,13 +36,16 @@ root_query_mode_info (root_video_mode_t *video_mode, root_u16 mode)
 }
 
 int
-root_getvideomode (root_u16 width, root_u16 height, root_u16 depth,
-                   root_video_mode_t *video_mode)
+root_vbe_find_best_videomode (root_u16 width, root_u16 height, root_u16 depth,
+                              root_video_mode_t *video_mode)
 {
   root_bios_args_t args;
   root_vbe_info_t info;
   root_u16 *modes;
+  root_size_t best_diff = SIZE_MAX;
   root_uintptr_t address = (root_uintptr_t) &info;
+  root_video_mode_t tmp;
+  int best_mode = -1;
   args.eax = 0x4F00;
   args.es = root_get_segment (address);
   args.edi = root_get_offset (address);
@@ -48,19 +55,32 @@ root_getvideomode (root_u16 width, root_u16 height, root_u16 depth,
   while (*modes != 0xFFFF)
     {
       root_u16 mode = *modes++;
-      root_query_mode_info (video_mode, mode);
-      // TODO: return non-best-fit options
-      if ((video_mode->attributes & 0x90) == 0x90
-          && (video_mode->memory_model == 4 || video_mode->memory_model == 6)
-          && width == video_mode->width && height == video_mode->height
-          && video_mode->bpp == depth)
-        return mode;
+      root_query_mode_info (&tmp, mode);
+      if ((tmp.attributes & 0x90) == 0x90
+          && (tmp.memory_model == 4 || tmp.memory_model == 6))
+        {
+          root_size_t mode_diff
+              = (MAX (width, tmp.width) - MIN (width, tmp.width))
+                + (MAX (height, tmp.height) - MIN (height, tmp.height))
+                + (MAX (depth, tmp.bpp) - MIN (depth, tmp.bpp));
+          if (!mode_diff)
+            {
+              *video_mode = tmp;
+              return mode;
+            }
+          if (mode_diff < best_diff)
+            {
+              best_diff = mode_diff;
+              best_mode = mode;
+              *video_mode = tmp;
+            }
+        }
     }
-  return -1;
+  return best_mode;
 }
 
 void
-root_setvideomode (root_u16 mode)
+root_vbe_set_videomode (root_u16 mode)
 {
   root_bios_args_t args;
   args.eax = 0x4F02;

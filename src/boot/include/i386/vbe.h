@@ -40,9 +40,10 @@ typedef struct root_video_mode_t
   root_u8 reserved1[206];
 } __attribute__ ((packed)) root_video_mode_t;
 
-int root_getvideomode (root_u16 width, root_u16 height, root_u16 depth,
-                       root_video_mode_t *video_mode);
+int root_vbe_find_best_videomode (root_u16 width, root_u16 height,
+                                  root_u16 depth,
+                                  root_video_mode_t *video_mode);
 
-void root_setvideomode (root_u16 mode);
+void root_vbe_set_videomode (root_u16 mode);
 
 #endif

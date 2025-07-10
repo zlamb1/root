@@ -47,12 +47,13 @@ root_machine_init (void)
       root_font_t font;
       if (root_initalloc ())
         root_panic ("failed to init alloc\n");
-      if ((mode = root_getvideomode (1920, 1080, 32, &video_mode)) < 0)
+      if ((mode = root_vbe_find_best_videomode (1200, 800, 32, &video_mode))
+          < 0)
         {
           root_printf ("failed to get video mode\n");
           break;
         }
-      root_setvideomode (mode);
+      root_vbe_set_videomode (mode);
       gfx_mode = (root_gfx_mode_t){ .width = video_mode.width,
                                     .height = video_mode.height,
                                     .stride = video_mode.pitch,
