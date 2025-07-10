@@ -47,7 +47,7 @@ root_machine_init (void)
       root_font_t font;
       if (root_initalloc ())
         root_panic ("failed to init alloc\n");
-      if ((mode = root_getvideomode (1280, 800, 32, &video_mode)) < 0)
+      if ((mode = root_getvideomode (1920, 1080, 32, &video_mode)) < 0)
         {
           root_printf ("failed to get video mode\n");
           break;

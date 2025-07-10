@@ -1,6 +1,7 @@
 .code16
 
 .extern STAGE1_STK
+.extern STAGE2_LBA
 .extern STAGE2_LOC
 .extern STAGE2_SEC
 
@@ -11,11 +12,11 @@
 
 start:
     cli
-    mov %dl, DRIVE_NUMBER
     xor %ax, %ax
     mov %ax, %ds
     mov %ax, %es
     mov %ax, %ss
+    mov %dl, DRIVE_NUMBER
     mov $STAGE1_STK, %ax
     mov %ax, %sp
     ljmp $0, $boot
@@ -38,64 +39,65 @@ boot:
     call lba
     jmp 2f
 1:
-    call chs
+    # call chs
+    jmp fail
 2:
     mov $EXIT_STRING, %si
     call prints
     ljmp $0, $STAGE2_LOC
 
-chs:
-    mov $0x8, %ah
-    mov DRIVE_NUMBER, %dl
-    mov $0, %di
-    int $0x13
-    jc fail
-    and $0x3F, %cl
-    mov %cl, SECTORS_PER_TRACK
-    mov %dh, NUMBER_OF_HEADS
-    cmp $0, %cl
-    je fail
-    cmp $0, %dh
-    je fail
-chs_read:
-    mov READ_SECTORS, %ax
-    cmp $0, %ax
-    je 1f
-    mov DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0, %ax
-    divb SECTORS_PER_TRACK
-    mov %ah, %cl
-    inc %cl
-    xor %ah, %ah
-    divb NUMBER_OF_HEADS
-    mov %ah, %dh
-    mov %al, %ch
-    mov $0x2, %ah
-    mov $1, %al
-    mov DRIVE_NUMBER, %dl
-    mov $STAGE2_LOC, %bx
-    int $0x13
-    jc chs_retry
-    incw DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0
-    decw READ_SECTORS
-    mov %es, %ax
-    add $0x20, %ax
-    mov %ax, %es
-    jmp chs_read
-1:
-    xor %ax, %ax
-    mov %ax, %es
-    ret
+# chs:
+#     mov $0x8, %ah
+#     mov DRIVE_NUMBER, %dl
+#     mov $0, %di
+#     int $0x13
+#     jc fail
+#     and $0x3F, %cl
+#     mov %cl, SECTORS_PER_TRACK
+#     mov %dh, NUMBER_OF_HEADS
+#     cmp $0, %cl
+#     je fail
+#     cmp $0, %dh
+#     je fail
+# chs_read:
+#     mov READ_SECTORS, %ax
+#     cmp $0, %ax
+#     je 1f
+#     mov DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0, %ax
+#     divb SECTORS_PER_TRACK
+#     mov %ah, %cl
+#     inc %cl
+#     xor %ah, %ah
+#     divb NUMBER_OF_HEADS
+#     mov %ah, %dh
+#     mov %al, %ch
+#     mov $0x2, %ah
+#     mov $1, %al
+#     mov DRIVE_NUMBER, %dl
+#     mov $STAGE2_LOC, %bx
+#     int $0x13
+#     jc chs_retry
+#     incw DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0
+#     decw READ_SECTORS
+#     mov %es, %ax
+#     add $0x20, %ax
+#     mov %ax, %es
+#     jmp chs_read
+# 1:
+#     xor %ax, %ax
+#     mov %ax, %es
+#     ret
 
-chs_retry:
-    incb READ_ATTEMPTS
-    mov READ_ATTEMPTS, %al
-    cmp $3, %al
-    jg fail
-    mov $0, %ah
-    mov DRIVE_NUMBER, %dl
-    int $0x13
-    jc fail
-    jmp chs_read
+# chs_retry:
+#     incb READ_ATTEMPTS
+#     mov READ_ATTEMPTS, %al
+#     cmp $3, %al
+#     jg fail
+#     mov $0, %ah
+#     mov DRIVE_NUMBER, %dl
+#     int $0x13
+#     jc fail
+#     jmp chs_read
 
 lba:
     mov READ_SECTORS, %eax
@@ -106,9 +108,7 @@ lba:
     mov DRIVE_NUMBER, %dl
     int $0x13
     jc fail
-    mov DISK_ADDRESS_PACKET_SEGMENT, %ax
-    add $0x20, %ax
-    mov %ax, DISK_ADDRESS_PACKET_SEGMENT
+    addw $0x20, DISK_ADDRESS_PACKET_SEGMENT
     addl $1, DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0
     adcl $0, DISK_ADDRESS_PACKET_BLOCK_NUMBER_L1
     decl READ_SECTORS
@@ -120,6 +120,13 @@ puts:
     mov $0xE, %ah
     mov $0, %bh
     int $0x10
+    ret
+
+nl:
+    mov $'\r', %al
+    call puts
+    mov $'\n', %al
+    call puts
     ret
 
 prints:
@@ -134,13 +141,16 @@ prints:
     ret
 
 fail:
-push %ax
 mov $FAIL_STRING, %si
+push %ax
 call prints
 pop %ax
 mov %ah, %al
 xor %ah, %ah
 call itoa
+
+stop:
+hlt
 jmp stop
 
 itoa:
@@ -157,10 +167,6 @@ mov %ah, %al
 add $'0', %al
 call puts
 ret
-
-stop:
-hlt
-jmp stop
 
 SECTORS_PER_TRACK:
 .byte 0
@@ -183,12 +189,9 @@ DISK_ADDRESS_PACKET:
 DISK_ADDRESS_PACKET_SEGMENT:
     .short 0x0000
 DISK_ADDRESS_PACKET_BLOCK_NUMBER_L0:
-    .long 0x0001
+    .long STAGE2_LBA
 DISK_ADDRESS_PACKET_BLOCK_NUMBER_L1:
     .long 0x0000
-
-DISK_CYLINDER:
-    .byte 0
 
 .global DRIVE_NUMBER
 
@@ -203,6 +206,26 @@ FAIL_STRING:
 
 EXIT_STRING:
 .asciz "exit stage1\r\n"
+
+.extern STAGE2_START_CHS0
+.extern STAGE2_START_CHS1
+.extern STAGE2_START_CHS2
+
+.extern STAGE2_END_CHS0
+.extern STAGE2_END_CHS1
+.extern STAGE2_END_CHS2
+
+. = 446
+.byte 0x80
+.byte STAGE2_START_CHS0
+.byte STAGE2_START_CHS1
+.byte STAGE2_START_CHS2
+.byte 0x01
+.byte STAGE2_END_CHS0
+.byte STAGE2_END_CHS1
+.byte STAGE2_END_CHS2
+.long STAGE2_LBA
+.long STAGE2_SEC
 
 . = 510
 .byte 0x55, 0xAA
