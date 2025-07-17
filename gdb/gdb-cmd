@@ -1,0 +1,8 @@
+file build/boot.elf
+
+target remote localhost:1234
+
+layout reg
+
+b *0x7C00
+c
