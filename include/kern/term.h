@@ -22,6 +22,13 @@ typedef struct
   struct root_term_t *term;
 } root_term_file_t;
 
+typedef enum
+{
+  ROOT_TERM_STATE_WRI,
+  ROOT_TERM_STATE_ESC,
+  ROOT_TERM_STATE_CSI
+} root_term_state_t;
+
 typedef struct root_term_t
 {
   void (*init) (struct root_term_t *term);

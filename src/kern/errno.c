@@ -1,5 +1,5 @@
-#include "errno.h"
-#include "types.h"
+#include "kern/errno.h"
+#include "kern/types.h"
 
 int root_errno = ROOT_SUCCESS;
 

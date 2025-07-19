@@ -19,7 +19,8 @@ WARNINGS := \
 
 CFLAGS := ${WARNINGS} -Os -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 		  -fno-strict-aliasing -mno-red-zone -fstack-protector-all \
-		  -falign-jumps=1 -falign-loops=1 -falign-functions=1
+		  -falign-jumps=1 -falign-loops=1 -falign-functions=1 \
+		  -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
 
 BOOT_SRCDIR   := src/boot/${TARGET}
 BOOT_SRCFILES := ${wildcard ${BOOT_SRCDIR}/*.S}
@@ -29,11 +30,11 @@ BOOT_DEPFILES := ${BOOT_OBJFILES:.o=.d}
 
 KERN_SRCDIR   := src/kern
 KERN_SRCFILES := ${wildcard ${KERN_SRCDIR}/*.c}
-KERN_INCLDIRS := include/kern include/mods
+KERN_INCLDIRS := include/
 KERN_OBJFILES := ${patsubst %.c,${OUTDIR}/%.o,${KERN_SRCFILES}}
 KERN_DEPFILES := ${KERN_OBJFILES:.o=.d}
 
-MACH_SRCDIR   := ${KERN_SRCDIR}/i386
+MACH_SRCDIR   := src/i386-pc
 MACH_SRCFILES := ${wildcard ${MACH_SRCDIR}/*.c}
 MACH_INCLDIRS := ${KERN_INCLDIRS}
 MACH_OBJFILES := ${patsubst %.c,${OUTDIR}/%.o,${MACH_SRCFILES}}
@@ -41,7 +42,7 @@ MACH_DEPFILES := ${MACH_OBJFILES:.o=.d}
 
 MOD_SRCDIR    := src/mods
 MOD_SRCFILES  := ${wildcard ${MOD_SRCDIR}/*.c}
-MOD_INCLDIRS  := include/kern include/mods
+MOD_INCLDIRS  := include/
 MOD_OBJFILES  := ${patsubst %.c,${OUTDIR}/%.o,${MOD_SRCFILES}}
 MOD_DEPFILES  := ${MOD_OBJFILES:.o=.d}
 

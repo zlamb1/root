@@ -1,10 +1,12 @@
-#include "vga.h"
-#include "errno.h"
-#include "machine.h"
-#include "mod.h"
-#include "string.h"
-#include "term.h"
-#include "types.h"
+#include "i386-pc/vga.h"
+#include "kern/errno.h"
+#include "kern/machine.h"
+#include "kern/string.h"
+#include "kern/term.h"
+#include "kern/types.h"
+
+#define ROOT_MODULE
+#include "kern/mod.h"
 
 #define VMEM 0xB8000
 #define COLS 80
@@ -162,8 +164,15 @@ vga_newline (struct root_term_t *t)
 {
   VGA_TERM (t);
   vga_term->y++;
-  if (vga_term->y >= ROWS)
-    vga_term->y = 0;
+  if (ROWS > 0 && vga_term->y >= ROWS)
+    {
+      root_uint16_t clr = (vga_term->fg & 0xF) | (vga_term->bg & 0xF) << 4;
+      vga_term->y = ROWS - 1;
+      root_memmove ((void *) VMEM, (void *) (VMEM + (COLS << 1)),
+                    (COLS << 1) * (ROWS - 1));
+      root_memsetw ((void *) (VMEM + (COLS << 1) * (ROWS - 1)), clr << 8,
+                    COLS << 1);
+    }
 }
 
 void

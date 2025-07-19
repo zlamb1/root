@@ -1,8 +1,8 @@
-#include "term.h"
-#include "errno.h"
-#include "machine.h"
-#include "print.h"
-#include "task.h"
+#include "kern/term.h"
+#include "kern/errno.h"
+#include "kern/machine.h"
+#include "kern/print.h"
+#include "kern/task.h"
 
 static root_term_t *terms = NULL;
 

@@ -1,7 +1,7 @@
 #ifndef ROOT_I386PC_BIOS_H
 #define ROOT_I386PC_BIOS_H 1
 
-#include "types.h"
+#include "kern/types.h"
 
 typedef struct root_bios_args_t
 {

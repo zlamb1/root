@@ -1,4 +1,6 @@
-#include "string.h"
+#include "kern/string.h"
+
+#define ROOT_GENERIC_MEMMOVE
 
 root_size_t
 root_strlen (const char *s)
@@ -32,6 +34,7 @@ root_memcpy (void *dst, const void *src, root_size_t n)
 }
 #endif
 
+#ifdef ROOT_GENERIC_MEMMOVE
 void
 root_memmove (void *dst, const void *src, root_size_t n)
 {
@@ -48,6 +51,7 @@ root_memmove (void *dst, const void *src, root_size_t n)
         *d++ = *s++;
     }
 }
+#endif
 
 #ifdef ROOT_GENERIC_MEMSET
 void

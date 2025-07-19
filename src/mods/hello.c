@@ -1,4 +1,4 @@
-#include "mod.h"
+#include "kern/mod.h"
 
 ROOT_MOD_INIT (hello) {}
 

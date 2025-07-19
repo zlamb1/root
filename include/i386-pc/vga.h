@@ -1,7 +1,7 @@
 #ifndef ROOT_VGA_H
 #define ROOT_VGA_H 1
 
-#include "term.h"
+#include "kern/term.h"
 
 #define VGA_COLOR_BLACK        0x0
 #define VGA_COLOR_BLUE         0x1

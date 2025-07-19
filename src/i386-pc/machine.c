@@ -1,4 +1,4 @@
-#include "machine.h"
+#include "kern/machine.h"
 
 void
 root_sti (void)

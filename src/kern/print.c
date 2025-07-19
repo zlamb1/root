@@ -1,8 +1,8 @@
-#include "print.h"
-#include "fd.h"
-#include "string.h"
-#include "term.h"
-#include "types.h"
+#include "kern/print.h"
+#include "kern/fd.h"
+#include "kern/string.h"
+#include "kern/term.h"
+#include "kern/types.h"
 
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 #define MIN(X, Y) ((X) > (Y) ? (Y) : (X))
