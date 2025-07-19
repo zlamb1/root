@@ -1,5 +1,5 @@
-#ifndef ROOT_KB_H
-#define ROOT_KB_H 1
+#ifndef ROOT_INPUT_H
+#define ROOT_INPUT_H 1
 
 #include "kern/kc.h"
 #include "kern/types.h"
@@ -22,6 +22,7 @@ typedef struct
   char ascii;
 } root_input_event_t;
 
+int root_enqueue_input (root_keycode_t kc, root_keystate_t state);
 int root_poll_input (root_input_event_t *evt);
 
 #endif

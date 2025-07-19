@@ -1,4 +1,4 @@
-#include "kern/kb.h"
+#include "kern/input.h"
 #include "kern/machine.h"
 #include "kern/print.h"
 

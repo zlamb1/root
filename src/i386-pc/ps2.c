@@ -1,6 +1,6 @@
 #include "i386-pc/ps2.h"
 #include "i386-pc/pic.h"
-#include "kern/kb.h"
+#include "kern/input.h"
 #include "kern/kc.h"
 #include "kern/machine.h"
 #include "kern/types.h"
@@ -48,125 +48,53 @@ static char ps2_scanset1_to_key_codes[256] = {
   [0x44] = ROOT_KEY_F10,
 };
 
-static volatile root_uint8_t head = 0, tail = 0;
-static volatile root_uint8_t buf[INPUT_BUFFER_MAX];
-
-static int shifts[2] = { 0 };
-static int alts[2] = { 0 };
-static int caps_lock = 0;
-
-static inline root_uint8_t
-_next (root_uint8_t n)
-{
-  return (n + 1) % INPUT_BUFFER_MAX;
-}
+static volatile root_uint8_t sz = 0;
+static volatile root_uint8_t buf[8];
 
 static void
 root_recv_sc (void)
 {
-  root_uint8_t scancode = root_inb (0x60);
-  root_uint8_t tail_next = _next (tail);
-  if (tail_next == head)
-    return;
-  buf[tail] = scancode;
-  tail = tail_next;
-  root_pic_eoi (1);
-}
-
-int
-root_poll_input (root_input_event_t *evt)
-{
-  static const char *conv[2]
-      = { root_keycode_to_ascii_map, root_mod_keycode_to_ascii_map };
-  int index = 0;
-  root_uint8_t sc;
-
-  if (tail == head)
-    return 0;
-
-  sc = buf[head];
-
-  if (sc == 0xE0)
+  root_uint8_t sc = root_inb (0x60);
+  root_keycode_t kc;
+  if (sz > 0)
     {
-      root_uint8_t next = _next (head);
-      if (next == tail)
-        return 0;
-      sc = buf[next];
       switch (sc)
         {
         case 0x48:
-          evt->kc = ROOT_KEY_UP;
+          kc = ROOT_KEY_UP;
           break;
         case 0x4B:
-          evt->kc = ROOT_KEY_LEFT;
+          kc = ROOT_KEY_LEFT;
           break;
         case 0x4D:
-          evt->kc = ROOT_KEY_RIGHT;
+          kc = ROOT_KEY_RIGHT;
           break;
         case 0x49:
-          evt->kc = ROOT_KEY_PAGEUP;
+          kc = ROOT_KEY_PAGEUP;
           break;
         case 0x50:
-          evt->kc = ROOT_KEY_DOWN;
+          kc = ROOT_KEY_DOWN;
           break;
         case 0x51:
-          evt->kc = ROOT_KEY_PAGEDOWN;
+          kc = ROOT_KEY_PAGEDOWN;
           break;
         default:
-          evt->kc = ROOT_KEY_RESERVED;
+          kc = ROOT_KEY_RESERVED;
           break;
         }
-      evt->state = (sc & 0x80) == 0;
-      evt->ascii = 0;
-      head = _next (head);
-      return 1;
+      sz = 0;
     }
-
-  evt->kc = ps2_scanset1_to_key_codes[sc & ~0x80];
-  evt->state = (sc & 0x80) == 0;
-  evt->mods = 0;
-
-  switch (evt->kc)
+  else if (sc == 0xE0)
     {
-    case ROOT_KEY_LEFTSHIFT:
-      shifts[0] = evt->state;
-      break;
-    case ROOT_KEY_RIGHTSHIFT:
-      shifts[1] = evt->state;
-      break;
-    case ROOT_KEY_LEFTALT:
-      alts[0] = evt->state;
-      break;
-    case ROOT_KEY_RIGHTALT:
-      alts[1] = evt->state;
-      break;
-    case ROOT_KEY_CAPSLOCK:
-      // TODO: implement PS/2 driver to set LEDs
-      if (evt->state == ROOT_KEY_PRESS)
-        caps_lock = !caps_lock;
-      break;
+      sz++;
+      buf[0] = 0xE0;
+      root_pic_eoi (PS2_IRQ);
+      return;
     }
-
-  if (shifts[0] || shifts[1])
-    {
-      evt->mods |= ROOT_SHIFT_MOD;
-      index++;
-    }
-
-  if (alts[0] || alts[1])
-    evt->mods |= ROOT_ALT_MOD;
-
-  if (caps_lock)
-    {
-      evt->mods |= ROOT_CAPSLOCK_MOD;
-      if (root_is_key_alpha (evt->kc))
-        index++;
-    }
-
-  evt->ascii = conv[index % 2][evt->kc];
-
-  head = _next (head);
-  return 1;
+  else
+    kc = ps2_scanset1_to_key_codes[sc & ~0x80];
+  root_enqueue_input (kc, (sc & 0x80) == 0);
+  root_pic_eoi (PS2_IRQ);
 }
 
 void
