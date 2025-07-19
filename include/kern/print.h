@@ -1,10 +1,10 @@
-#include "kern/machine.h"
 #ifndef ROOT_PRINT_H
 #define ROOT_PRINT_H 1
 
 #include <stdarg.h>
 
 #include "fd.h"
+#include "machine.h"
 #include "types.h"
 
 #define ROOT_STDIN  0
