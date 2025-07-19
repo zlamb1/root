@@ -1,3 +1,4 @@
+#include "kern/machine.h"
 #ifndef ROOT_PRINT_H
 #define ROOT_PRINT_H 1
 
@@ -46,6 +47,13 @@ root_printf (const char *fmt, ...)
   root_cursorsync ();
   va_end (args);
   return len;
+}
+
+static void
+root_error (const char *fmt, ...)
+{
+  (void) fmt;
+  root_halt ();
 }
 
 #endif

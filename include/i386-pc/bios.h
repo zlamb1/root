@@ -3,6 +3,9 @@
 
 #include "kern/types.h"
 
+#define ROOT_BIOS_CARRY_FLAG  0x1
+#define ROOT_BIOS_PARITY_FLAG 0x4
+
 typedef struct root_bios_args_t
 {
   root_uint32_t eax;
@@ -19,5 +22,17 @@ typedef struct root_bios_args_t
 
 void root_bios_interrupt (root_uint8_t intnum, root_bios_args_t *args)
     __attribute__ ((regparm (3)));
+
+static inline root_uint16_t
+root_get_real_segment (void *p)
+{
+  return ((root_uintptr_t) p) >> 4;
+}
+
+static inline root_uint16_t
+root_get_real_offset (void *p)
+{
+  return ((root_uintptr_t) p) % 16;
+}
 
 #endif
