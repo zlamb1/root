@@ -34,17 +34,22 @@ KERN_INCLDIRS := include/
 KERN_OBJFILES := ${patsubst %.c,${OUTDIR}/%.o,${KERN_SRCFILES}}
 KERN_DEPFILES := ${KERN_OBJFILES:.o=.d}
 
-MACH_SRCDIR   := src/i386-pc
+MACH_NAME     := i386-pc
+MACH_SRCDIR   := src/${MACH_NAME}
 MACH_SRCFILES := ${wildcard ${MACH_SRCDIR}/*.c}
 MACH_INCLDIRS := ${KERN_INCLDIRS}
 MACH_OBJFILES := ${patsubst %.c,${OUTDIR}/%.o,${MACH_SRCFILES}}
 MACH_DEPFILES := ${MACH_OBJFILES:.o=.d}
 
-MOD_SRCDIR    := src/mods
-MOD_SRCFILES  := ${wildcard ${MOD_SRCDIR}/*.c}
-MOD_INCLDIRS  := include/
-MOD_OBJFILES  := ${patsubst %.c,${OUTDIR}/%.o,${MOD_SRCFILES}}
-MOD_DEPFILES  := ${MOD_OBJFILES:.o=.d}
+MODS_OUTDIR    := ${OUTDIR}/mods
+MODS_SRCDIR    := src/mods
+MODS_SRCFILES  := ${wildcard ${MODS_SRCDIR}/*.c} ${wildcard ${MODS_SRCDIR}/${MACH_NAME}/*.c}
+MODS_INCLDIRS  := include/
+MODS_OBJFILES  := ${addprefix ${MODS_OUTDIR}/,${notdir ${MODS_SRCFILES:.c=.mod}}}
+MODS_DEPFILES  := ${MODS_OBJFILES:.mod=.d}
+
+MODS_BUILTINS      := ps2
+MODS_BUILTINS_OBJS := ${addprefix ${MODS_OUTDIR}/,${addsuffix .o,${MODS_BUILTINS}}}
 
 BOOTLD  := ${BOOT_SRCDIR}/boot.ld
 BOOTELF := ${OUTDIR}/boot.elf
@@ -56,7 +61,7 @@ define USEVAR
 ${if ${1}, ${1}}
 endef
 
-all: ${BOOTIMG}
+all: ${BOOTIMG} ${MODS_OBJFILES}
 
 clean:
 	rm -rf ${OUTDIR}
@@ -64,8 +69,15 @@ clean:
 ${BOOTIMG}: ${BOOTELF} | ${OUTDIR}
 	objcopy -O binary $< $@
 
-${BOOTELF}: ${BOOTLD} ${BOOT_OBJFILES} ${KERN_OBJFILES} ${MACH_OBJFILES} ${MOD_OBJFILES} | ${OUTDIR}
-	${TARGETCC} ${LDFLAGS} ${BOOT_OBJFILES} ${KERN_OBJFILES} ${MACH_OBJFILES} ${MOD_OBJFILES} -T ${BOOTLD} -o $@ -lgcc
+${BOOTELF}: ${BOOTLD} ${BOOT_OBJFILES} ${KERN_OBJFILES} ${MACH_OBJFILES} ${MODS_BUILTINS_OBJS} | ${OUTDIR}
+	${TARGETCC} ${LDFLAGS} ${BOOT_OBJFILES} ${KERN_OBJFILES} ${MACH_OBJFILES} ${MODS_BUILTINS_OBJS} \
+		-T ${BOOTLD} -o $@ -lgcc
+
+${MODS_OUTDIR}/%.o: ${MODS_OUTDIR}/%.mod
+	cp $< $@
+
+${MODS_OUTDIR}:
+	mkdir -p $@
 
 ${OUTDIR}:
 	mkdir -p $@
@@ -77,12 +89,18 @@ ${OUTDIR}/${1}:
 	mkdir -p $$@
 endef
 
+define MKMODRULE
+${MODS_OUTDIR}/${notdir ${1:.c=.mod}}: ${1} | ${MODS_OUTDIR}
+	${TARGETCC} ${CFLAGS} -DROOT_MODULE -MMD ${patsubst %,-I%,${MODS_INCLDIRS}} $$< -o $$@
+endef
+
 ${eval ${call MKSRCDIR,${BOOT_SRCDIR},S,${BOOT_INCLDIRS}}}
 ${eval ${call MKSRCDIR,${KERN_SRCDIR},c,${KERN_INCLDIRS},-DROOT_KERNEL}}
 ${eval ${call MKSRCDIR,${MACH_SRCDIR},c,${MACH_INCLDIRS},-DROOT_KERNEL}}
-${eval ${call MKSRCDIR,${MOD_SRCDIR},c,${MOD_INCLDIRS},-DROOT_MODULE -DROOT_KERNEL}}
+
+${foreach SRCFILE,${MODS_SRCFILES},${eval ${call MKMODRULE,${SRCFILE}}}}
 
 -include ${BOOT_DEPFILES}
 -include ${KERN_DEPFILES}
 -include ${MACH_DEPFILES}
--include ${MOD_DEPFILES}
+-include ${MODS_DEPFILES}

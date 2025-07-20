@@ -1,15 +1,11 @@
-#include "i386-pc/ps2.h"
 #include "i386-pc/pic.h"
 #include "kern/input.h"
 #include "kern/kc.h"
 #include "kern/machine.h"
+#include "kern/mod.h"
 #include "kern/types.h"
 
-#define ROOT_MODULE
-#include "kern/mod.h"
-
-#define PS2_IRQ          1
-#define INPUT_BUFFER_MAX 128
+#define PS2_IRQ 1
 
 static char ps2_scanset1_to_key_codes[256] = {
   [0x01] = ROOT_KEY_ESC,        [0x02] = ROOT_KEY_1,
@@ -97,19 +93,10 @@ root_recv_sc (void)
   root_pic_eoi (PS2_IRQ);
 }
 
-void
-root_ps2_mod_init (void)
+ROOT_MOD_INIT (ps2)
 {
   root_pic_set_isr (PS2_IRQ, root_recv_sc);
   root_pic_unmask_irq (PS2_IRQ);
 }
 
-void
-root_ps2_mod_fini (void)
-{
-  root_pic_mask_irq (PS2_IRQ);
-}
-
-ROOT_MOD_INIT (ps2) { root_ps2_mod_init (); }
-
-ROOT_MOD_FINI () { root_ps2_mod_fini (); }
+ROOT_MOD_FINI () { root_pic_mask_irq (PS2_IRQ); }

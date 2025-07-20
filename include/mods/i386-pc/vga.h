@@ -20,7 +20,6 @@
 #define VGA_COLOR_YELLOW       0xE
 #define VGA_COLOR_WHITE        0xF
 
-void vga_init (root_term_t *term);
 void vga_putchar (root_term_t *term, char ch);
 void vga_putcursor (root_term_t *term, root_uint16_t x, root_uint16_t y);
 root_uint32_t vga_getfg (root_term_t *term);

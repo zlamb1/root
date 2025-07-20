@@ -71,8 +71,8 @@ root_term_set_primary (root_term_t *term)
     root_halt ();
   if (term != NULL)
     {
-      term->init (term);
       root_running_task->fds[ROOT_STDOUT] = &term->stdout.base;
+      term->clr (term);
     }
   else
     root_running_task->fds[ROOT_STDOUT] = NULL;

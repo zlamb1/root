@@ -1,12 +1,10 @@
-#include "i386-pc/vga.h"
+#include "mods/i386-pc/vga.h"
 #include "kern/errno.h"
 #include "kern/machine.h"
+#include "kern/mod.h"
 #include "kern/string.h"
 #include "kern/term.h"
 #include "kern/types.h"
-
-#define ROOT_MODULE
-#include "kern/mod.h"
 
 #define VMEM 0xB8000
 #define COLS 80
@@ -48,8 +46,7 @@ typedef struct
   root_file_t stdout;
 } vga_term_t;
 
-static vga_term_t term = { .base = { .init = vga_init,
-                                     .putchar = vga_putchar,
+static vga_term_t term = { .base = { .putchar = vga_putchar,
                                      .putcursor = vga_putcursor,
                                      .getfg = vga_getfg,
                                      .setfg = vga_setfg,
@@ -61,14 +58,6 @@ static vga_term_t term = { .base = { .init = vga_init,
                                      .advance = vga_advance,
                                      .newline = vga_newline,
                                      .clr = vga_clr } };
-
-void
-vga_init (root_term_t *t)
-{
-  VGA_TERM (t);
-  t->putcursor (t, vga_term->cx, vga_term->cy);
-  t->clr (t);
-}
 
 void
 vga_putchar (root_term_t *t, char ch)
@@ -182,6 +171,7 @@ vga_clr (root_term_t *t)
   VGA_TERM (t);
   clr = (vga_term->fg & 0xF) | (vga_term->bg & 0xF) << 4;
   root_memsetw ((void *) VMEM, clr << 8, COLS * ROWS);
+  t->putcursor (t, 0, 0);
 }
 
 void

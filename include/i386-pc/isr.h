@@ -3,14 +3,14 @@
 
 #include "kern/types.h"
 
-typedef struct root_idt_entry32_t
+typedef struct root_idt_entry_t
 {
   root_uint16_t isr_low;
   root_uint16_t kernel_cs;
   root_uint8_t reserved;
   root_uint8_t attribs;
   root_uint16_t isr_high;
-} __attribute__ ((packed)) root_idt_entry32_t;
+} __attribute__ ((packed)) root_idt_entry_t;
 
 typedef struct root_idtr_t
 {

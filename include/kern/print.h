@@ -5,6 +5,7 @@
 
 #include "fd.h"
 #include "machine.h"
+#include "malloc.h"
 #include "types.h"
 
 #define ROOT_STDIN  0
@@ -43,16 +44,70 @@ root_printf (const char *fmt, ...)
   va_list args;
   va_start (args, fmt);
   len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args);
-  root_write (ROOT_STDOUT, buf, len);
-  root_cursorsync ();
+  if (len > 0)
+    {
+      if (len >= ROOT_PRINT_PREALLOC)
+        {
+          char *tmp = root_malloc (len + 1);
+          len = root_vsnprintf (tmp, len + 1, fmt, args);
+          if (len > 0)
+            {
+              root_write (ROOT_STDOUT, tmp, len);
+              root_cursorsync ();
+            }
+          root_free (tmp);
+          return len;
+        }
+      else
+        {
+          root_write (ROOT_STDOUT, buf, len);
+          root_cursorsync ();
+        }
+    }
   va_end (args);
   return len;
 }
 
 static void
+root_ok (const char *fmt, ...)
+{
+  int len;
+  va_list args;
+  char buf[ROOT_PRINT_PREALLOC];
+  root_printf ("[ OK ] ");
+  va_start (args, fmt);
+  if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
+    root_write (ROOT_STDOUT, buf, len);
+  root_printf ("\n");
+  va_end (args);
+}
+
+static void
+root_warn (const char *fmt, ...)
+{
+  int len;
+  va_list args;
+  char buf[ROOT_PRINT_PREALLOC];
+  root_printf ("[ WARN ] ");
+  va_start (args, fmt);
+  if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
+    root_write (ROOT_STDOUT, buf, len);
+  root_printf ("\n");
+  va_end (args);
+}
+
+static void
 root_error (const char *fmt, ...)
 {
-  (void) fmt;
+  int len;
+  va_list args;
+  char buf[ROOT_PRINT_PREALLOC];
+  root_printf ("[ ERROR ] ");
+  va_start (args, fmt);
+  if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
+    root_write (ROOT_STDOUT, buf, len);
+  root_printf ("\n");
+  va_end (args);
   root_halt ();
 }
 

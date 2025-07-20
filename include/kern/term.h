@@ -31,7 +31,6 @@ typedef enum
 
 typedef struct root_term_t
 {
-  void (*init) (struct root_term_t *term);
   void (*putchar) (struct root_term_t *term, char ch);
   void (*putcursor) (struct root_term_t *term, root_uint16_t x,
                      root_uint16_t y);

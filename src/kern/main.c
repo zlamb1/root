@@ -1,5 +1,6 @@
 #include "kern/input.h"
 #include "kern/machine.h"
+#include "kern/mod.h"
 #include "kern/print.h"
 
 void __attribute__ ((noreturn)) root_main (void);
@@ -8,7 +9,8 @@ void
 root_main (void)
 {
   root_machine_init ();
-  root_printf ("machine init\n");
+  root_ok ("machine init");
+  root_initmods ();
   for (;;)
     {
       root_input_event_t evt;
