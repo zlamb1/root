@@ -23,7 +23,7 @@
   vga_term_t *vga_term;                                                       \
   if ((T) == NULL)                                                            \
     {                                                                         \
-      root_seterrno (ROOT_EARG);                                              \
+      root_seterrno (ROOT_EINVAL);                                            \
       return;                                                                 \
     }                                                                         \
   vga_term = (vga_term_t *) (T);
@@ -32,7 +32,7 @@
   vga_term_t *vga_term;                                                       \
   if ((T) == NULL)                                                            \
     {                                                                         \
-      root_seterrno (ROOT_EARG);                                              \
+      root_seterrno (ROOT_EINVAL);                                            \
       return (R);                                                             \
     }                                                                         \
   vga_term = (vga_term_t *) (T);

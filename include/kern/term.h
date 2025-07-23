@@ -39,33 +39,6 @@ typedef struct
   struct root_term_t *term;
 } root_term_file_t;
 
-typedef enum
-{
-  ROOT_TERM_STATE_WRI = 0,
-  ROOT_TERM_STATE_ESC,
-  ROOT_TERM_STATE_CSI
-} root_term_state_t;
-
-typedef enum
-{
-  ROOT_TERM_CSI_CUU = 'A',
-  ROOT_TERM_CSI_CUD = 'B',
-  ROOT_TERM_CSI_CUF = 'C',
-  ROOT_TERM_CSI_CUB = 'D',
-  ROOT_TERM_CSI_CNL = 'E',
-  ROOT_TERM_CSI_CPL = 'F',
-  ROOT_TERM_CSI_CHA = 'G',
-  ROOT_TERM_CSI_CUP = 'H',
-  ROOT_TERM_CSI_ED = 'J',
-  ROOT_TERM_CSI_EL = 'K',
-  ROOT_TERM_CSI_SU = 'S',
-  ROOT_TERM_CSI_SD = 'T',
-  ROOT_TERM_CSI_HVP = 'f',
-  ROOT_TERM_CSI_SGR = 'm',
-  ROOT_TERM_CSI_SCP = 's',
-  ROOT_TERM_CSI_RCP = 'u'
-} root_term_csi_t;
-
 typedef struct
 {
   root_size_t cap, cnt;

@@ -15,7 +15,7 @@ WARNINGS := \
 	-Winline -Wundef -Wunreachable-code -Wredundant-decls -Wfloat-equal -Wcast-align \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -pedantic-errors \
-	-Wno-unused -Wno-gnu-case-range
+	-Wno-unused
 
 CFLAGS := ${WARNINGS} -Os -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 		  -fno-strict-aliasing -mno-red-zone -fstack-protector-all \

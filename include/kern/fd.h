@@ -11,7 +11,7 @@ root_read (int fd, char *buf, root_size_t size)
 {
   if (root_running_task == NULL || (root_size_t) fd >= root_running_task->nfds
       || root_running_task->fds[fd] == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   return root_file_read (root_running_task->fds[fd], buf, size);
 }
 
@@ -20,7 +20,7 @@ root_write (int fd, const char *buf, root_size_t size)
 {
   if (root_running_task == NULL || (root_size_t) fd >= root_running_task->nfds
       || root_running_task->fds[fd] == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   return root_file_write (root_running_task->fds[fd], buf, size);
 }
 
@@ -31,7 +31,7 @@ root_ioctl (int fd, int op, ...)
   va_list args;
   if (root_running_task == NULL || (root_size_t) fd >= root_running_task->nfds)
     {
-      root_seterrno (ROOT_EARG);
+      root_seterrno (ROOT_EINVAL);
       return -1;
     }
   va_start (args, op);

@@ -18,7 +18,7 @@ static inline root_ssize_t
 root_file_read (root_file_t *file, char *buf, root_size_t size)
 {
   if (file == NULL || file->read == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   return file->read (file, buf, size);
 }
 
@@ -26,7 +26,7 @@ static inline root_ssize_t
 root_file_write (root_file_t *file, const char *buf, root_size_t size)
 {
   if (file == NULL || file->write == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   return file->write (file, buf, size);
 }
 
@@ -35,7 +35,7 @@ root_file_ioctlv (root_file_t *file, int op, va_list args)
 {
   if (file == NULL || file->ioctl == NULL)
     {
-      root_seterrno (ROOT_EARG);
+      root_seterrno (ROOT_EINVAL);
       return -1;
     }
   return file->ioctl (file, op, args);

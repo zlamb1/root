@@ -44,7 +44,7 @@ root_mmap_e820 (root_mmap_t *mmap)
   root_e820_entry_t entry;
   int r;
   if (mmap == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   mmap->nentries = 0;
   args.ebx = 0;
   do

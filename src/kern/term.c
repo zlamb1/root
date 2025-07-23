@@ -11,6 +11,33 @@
 
 #define MIN(X, Y) ((X) > (Y) ? (Y) : (X))
 
+typedef enum
+{
+  ROOT_TERM_STATE_WRI = 0,
+  ROOT_TERM_STATE_ESC,
+  ROOT_TERM_STATE_CSI
+} root_term_state_t;
+
+typedef enum
+{
+  ROOT_TERM_CSI_CUU = 'A',
+  ROOT_TERM_CSI_CUD = 'B',
+  ROOT_TERM_CSI_CUF = 'C',
+  ROOT_TERM_CSI_CUB = 'D',
+  ROOT_TERM_CSI_CNL = 'E',
+  ROOT_TERM_CSI_CPL = 'F',
+  ROOT_TERM_CSI_CHA = 'G',
+  ROOT_TERM_CSI_CUP = 'H',
+  ROOT_TERM_CSI_ED = 'J',
+  ROOT_TERM_CSI_EL = 'K',
+  ROOT_TERM_CSI_SU = 'S',
+  ROOT_TERM_CSI_SD = 'T',
+  ROOT_TERM_CSI_HVP = 'f',
+  ROOT_TERM_CSI_SGR = 'm',
+  ROOT_TERM_CSI_SCP = 's',
+  ROOT_TERM_CSI_RCP = 'u'
+} root_term_csi_t;
+
 static root_term_t *terms = NULL;
 
 static unsigned char vt_color_map[8]
@@ -30,7 +57,7 @@ root_term_init (root_term_t *term)
 {
   if (term == NULL)
     {
-      root_seterrno (ROOT_EARG);
+      root_seterrno (ROOT_EINVAL);
       return;
     }
   term->stdout.base.read = NULL;
@@ -50,7 +77,7 @@ root_register_term (root_term_t *term)
   int first = terms == NULL;
   if (term == NULL)
     {
-      root_seterrno (ROOT_EARG);
+      root_seterrno (ROOT_EINVAL);
       return;
     }
   term->next = terms;
@@ -64,7 +91,7 @@ root_unregister_term (root_term_t *term)
 {
   root_term_t *p = NULL, *t = terms;
   if (term == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   while (t != NULL)
     {
       if (t == term)
@@ -176,7 +203,7 @@ term_handle_esc_seq (root_term_t *term, unsigned char code)
               term->setbg (term, TERM_DEFAULT_BG);
             else if (arg >= 90 && arg <= 97)
               term->setfg (term, vt_bright_color_map[arg - 90]);
-            else if (arg >= 100 && arg <= 100)
+            else if (arg >= 100 && arg <= 107)
               term->setbg (term, vt_bright_color_map[arg - 100]);
           }
         break;
@@ -200,7 +227,7 @@ root_term_putchar (root_term_t *term, char ch)
   root_term_pos_t xy;
   if (term == NULL)
     {
-      root_seterrno (ROOT_EARG);
+      root_seterrno (ROOT_EINVAL);
       return;
     }
   wh = term->getwh (term);
@@ -287,7 +314,7 @@ root_term_write (root_file_t *file, const char *buf, root_size_t size)
 {
   root_term_file_t *term_file;
   if (file == NULL || buf == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   term_file = (root_term_file_t *) file;
   for (root_size_t i = 0; i < size; i++)
     root_term_putchar (term_file->term, buf[i]);
@@ -300,11 +327,11 @@ root_term_ioctl (root_file_t *file, int op, va_list args)
   root_term_file_t *term_file;
   root_term_t *term;
   if (file == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   term_file = (root_term_file_t *) file;
   term = term_file->term;
   if (term == NULL)
-    return ROOT_EARG;
+    return ROOT_EINVAL;
   (void) args;
   switch (op)
     {
@@ -315,5 +342,5 @@ root_term_ioctl (root_file_t *file, int op, va_list args)
         break;
       }
     }
-  return ROOT_EUOP;
+  return ROOT_EINVAL;
 }
