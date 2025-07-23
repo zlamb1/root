@@ -1,7 +1,6 @@
 #include "mods/i386-pc/vga.h"
 #include "kern/errno.h"
 #include "kern/machine.h"
-#include "kern/mod.h"
 #include "kern/string.h"
 #include "kern/term.h"
 #include "kern/types.h"
@@ -181,8 +180,8 @@ root_vga_term_mod_init (void)
   term.y = 0;
   term.cx = 0;
   term.cy = 0;
-  term.fg = VGA_COLOR_WHITE;
-  term.bg = VGA_COLOR_BLACK;
+  term.fg = ROOT_TERM_COLOR_WHITE;
+  term.bg = ROOT_TERM_COLOR_BLACK;
   root_seterrno (ROOT_SUCCESS);
   root_term_init (&term.base);
   if (root_errno != ROOT_SUCCESS)
@@ -199,4 +198,4 @@ root_vga_term_mod_fini (void)
 
 ROOT_MOD_INIT (vga_term) { root_vga_term_mod_init (); }
 
-ROOT_MOD_FINI () { root_vga_term_mod_fini (); }
+ROOT_MOD_FINI (vga_term) { root_vga_term_mod_fini (); }

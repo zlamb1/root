@@ -15,7 +15,7 @@ WARNINGS := \
 	-Winline -Wundef -Wunreachable-code -Wredundant-decls -Wfloat-equal -Wcast-align \
 	-Wcast-qual -Wdeclaration-after-statement -Wmissing-include-dirs -Wnested-externs \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -pedantic-errors \
-	-Wno-unused
+	-Wno-unused -Wno-gnu-case-range
 
 CFLAGS := ${WARNINGS} -Os -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 		  -fno-strict-aliasing -mno-red-zone -fstack-protector-all \
@@ -48,7 +48,7 @@ MODS_INCLDIRS  := include/
 MODS_OBJFILES  := ${addprefix ${MODS_OUTDIR}/,${notdir ${MODS_SRCFILES:.c=.mod}}}
 MODS_DEPFILES  := ${MODS_OBJFILES:.mod=.d}
 
-MODS_BUILTINS      := ps2
+MODS_BUILTINS      := vga ps2 sh
 MODS_BUILTINS_OBJS := ${addprefix ${MODS_OUTDIR}/,${addsuffix .o,${MODS_BUILTINS}}}
 
 BOOTLD  := ${BOOT_SRCDIR}/boot.ld

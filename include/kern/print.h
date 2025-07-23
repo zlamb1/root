@@ -74,7 +74,7 @@ root_ok (const char *fmt, ...)
   int len;
   va_list args;
   char buf[ROOT_PRINT_PREALLOC];
-  root_printf ("[ OK ] ");
+  root_printf ("\033[32m[ OK ] \033[0m");
   va_start (args, fmt);
   if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
     root_write (ROOT_STDOUT, buf, len);
@@ -88,7 +88,7 @@ root_warn (const char *fmt, ...)
   int len;
   va_list args;
   char buf[ROOT_PRINT_PREALLOC];
-  root_printf ("[ WARN ] ");
+  root_printf ("\033[93m[ WARN ] \033[0m");
   va_start (args, fmt);
   if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
     root_write (ROOT_STDOUT, buf, len);
@@ -102,7 +102,7 @@ root_error (const char *fmt, ...)
   int len;
   va_list args;
   char buf[ROOT_PRINT_PREALLOC];
-  root_printf ("[ ERROR ] ");
+  root_printf ("\033[31m[ ERROR ] \033[0m");
   va_start (args, fmt);
   if ((len = root_vsnprintf (buf, ROOT_PRINT_PREALLOC, fmt, args)) > 0)
     root_write (ROOT_STDOUT, buf, len);

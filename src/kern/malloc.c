@@ -86,7 +86,7 @@ root_malloc (root_size_t sz)
 }
 
 void *
-root_realloc (void *p, root_size_t sz)
+root_realloc (const void *p, root_size_t sz)
 {
   root_page_t *page;
   void *np;
@@ -117,7 +117,7 @@ root_realloc (void *p, root_size_t sz)
 }
 
 void
-root_free (void *p)
+root_free (const void *p)
 {
   root_page_t *page = root_get_page (p);
   if (page == NULL)

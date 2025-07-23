@@ -99,4 +99,4 @@ ROOT_MOD_INIT (ps2)
   root_pic_unmask_irq (PS2_IRQ);
 }
 
-ROOT_MOD_FINI () { root_pic_mask_irq (PS2_IRQ); }
+ROOT_MOD_FINI (ps2) { root_pic_mask_irq (PS2_IRQ); }

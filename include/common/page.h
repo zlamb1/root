@@ -33,7 +33,7 @@ typedef struct root_page_map_t
 extern root_page_map_t root_page_map;
 
 static root_page_t *
-root_get_page (void *p)
+root_get_page (const void *p)
 {
   root_uintptr_t addr = (root_uintptr_t) p;
   root_uintptr_t index = addr >> ROOT_PAGE_POW;

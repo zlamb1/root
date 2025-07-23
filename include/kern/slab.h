@@ -23,7 +23,7 @@ typedef struct root_slab_t
 
 root_slab_t *root_create_slab (root_size_t sz, root_size_t align);
 void *root_slab_alloc (root_slab_t *slab);
-int root_slab_free (root_slab_t *slab, void *p, int release);
+int root_slab_free (root_slab_t *slab, const void *p, int release);
 void root_slab_release (root_slab_t *slab);
 
 #endif

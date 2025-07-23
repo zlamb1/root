@@ -1,10 +1,29 @@
 #include "kern/term.h"
+#include "common/page.h"
 #include "kern/errno.h"
 #include "kern/machine.h"
+#include "kern/malloc.h"
 #include "kern/print.h"
 #include "kern/task.h"
 
+#define TERM_DEFAULT_FG ROOT_TERM_COLOR_WHITE
+#define TERM_DEFAULT_BG ROOT_TERM_COLOR_BLACK
+
+#define MIN(X, Y) ((X) > (Y) ? (Y) : (X))
+
 static root_term_t *terms = NULL;
+
+static unsigned char vt_color_map[8]
+    = { [0] = ROOT_TERM_COLOR_BLACK, [1] = ROOT_TERM_COLOR_RED,
+        [2] = ROOT_TERM_COLOR_GREEN, [3] = ROOT_TERM_COLOR_BROWN,
+        [4] = ROOT_TERM_COLOR_BLUE,  [5] = ROOT_TERM_COLOR_PURPLE,
+        [6] = ROOT_TERM_COLOR_CYAN,  [7] = ROOT_TERM_COLOR_GRAY };
+
+static unsigned char vt_bright_color_map[8]
+    = { [0] = ROOT_TERM_COLOR_DARK_GRAY,   [1] = ROOT_TERM_COLOR_LIGHT_RED,
+        [2] = ROOT_TERM_COLOR_LIGHT_GREEN, [3] = ROOT_TERM_COLOR_YELLOW,
+        [4] = ROOT_TERM_COLOR_LIGHT_BLUE,  [5] = ROOT_TERM_COLOR_LIGHT_PURPLE,
+        [6] = ROOT_TERM_COLOR_LIGHT_CYAN,  [7] = ROOT_TERM_COLOR_WHITE };
 
 void
 root_term_init (root_term_t *term)
@@ -18,6 +37,11 @@ root_term_init (root_term_t *term)
   term->stdout.base.write = root_term_write;
   term->stdout.base.ioctl = root_term_ioctl;
   term->stdout.term = term;
+  term->state = ROOT_TERM_STATE_WRI;
+  root_memset (&term->args, 0, sizeof (root_term_args_t));
+  term->saved_cursor_pos.x = 0;
+  term->saved_cursor_pos.y = 0;
+  term->next = NULL;
 }
 
 void
@@ -78,6 +102,97 @@ root_term_set_primary (root_term_t *term)
     root_running_task->fds[ROOT_STDOUT] = NULL;
 }
 
+static void
+term_handle_esc_seq (root_term_t *term, unsigned char code)
+{
+#define DEFAULT_ARG(X) term->args.buf[0].i == 0 ? (X) : term->args.buf[0].i
+  root_term_pos_t xy = term->getxy (term);
+  root_term_size_t wh = term->getwh (term);
+  switch (code)
+    {
+    case ROOT_TERM_CSI_CUU:
+      {
+        int move = DEFAULT_ARG (1);
+        move = MIN (xy.y, move);
+        term->setxy (term, xy.x, xy.y - move);
+        break;
+      }
+    case ROOT_TERM_CSI_CUD:
+      {
+        int move = DEFAULT_ARG (1);
+        move = MIN (wh.height - xy.y - 1, move);
+        term->setxy (term, xy.x, xy.y + move);
+        break;
+      }
+    case ROOT_TERM_CSI_CUF:
+      {
+        int move = DEFAULT_ARG (1);
+        move = MIN (wh.width - xy.x - 1, move);
+        term->setxy (term, xy.x + move, xy.y);
+        break;
+      }
+    case ROOT_TERM_CSI_CUB:
+      {
+        int move = DEFAULT_ARG (1);
+        move = MIN (xy.x, move);
+        term->setxy (term, xy.x - move, xy.y);
+        break;
+      }
+    case ROOT_TERM_CSI_CNL:
+      break;
+    case ROOT_TERM_CSI_CPL:
+      break;
+    case ROOT_TERM_CSI_CHA:
+      break;
+    case ROOT_TERM_CSI_CUP:
+      break;
+    case ROOT_TERM_CSI_ED:
+      break;
+    case ROOT_TERM_CSI_EL:
+      break;
+    case ROOT_TERM_CSI_SU:
+      break;
+    case ROOT_TERM_CSI_SD:
+      break;
+    case ROOT_TERM_CSI_HVP:
+      break;
+    case ROOT_TERM_CSI_SGR:
+      {
+        for (root_size_t i = 0; i < term->args.cnt; i++)
+          {
+            int arg = term->args.buf[i].i;
+            if (arg == 0)
+              {
+                term->setfg (term, TERM_DEFAULT_FG);
+                term->setbg (term, TERM_DEFAULT_BG);
+              }
+            else if (arg >= 30 && arg <= 37)
+              term->setfg (term, vt_color_map[arg - 30]);
+            else if (arg == 39)
+              term->setfg (term, TERM_DEFAULT_FG);
+            else if (arg >= 40 && arg <= 47)
+              term->setbg (term, vt_color_map[arg - 40]);
+            else if (arg == 49)
+              term->setbg (term, TERM_DEFAULT_BG);
+            else if (arg >= 90 && arg <= 97)
+              term->setfg (term, vt_bright_color_map[arg - 90]);
+            else if (arg >= 100 && arg <= 100)
+              term->setbg (term, vt_bright_color_map[arg - 100]);
+          }
+        break;
+      }
+    case ROOT_TERM_CSI_SCP:
+      term->saved_cursor_pos = xy;
+      break;
+    case ROOT_TERM_CSI_RCP:
+      term->setxy (term, term->saved_cursor_pos.x, term->saved_cursor_pos.y);
+      break;
+    }
+  term->args.cnt = 0;
+  term->state = ROOT_TERM_STATE_WRI;
+#undef DEFAULT_ARG
+}
+
 void
 root_term_putchar (root_term_t *term, char ch)
 {
@@ -90,6 +205,49 @@ root_term_putchar (root_term_t *term, char ch)
     }
   wh = term->getwh (term);
   xy = term->getxy (term);
+  switch (term->state)
+    {
+    case ROOT_TERM_STATE_WRI:
+      if (ch == '\033')
+        {
+          term->state = ROOT_TERM_STATE_ESC;
+          return;
+        }
+      break;
+    case ROOT_TERM_STATE_ESC:
+      switch (ch)
+        {
+        case '[':
+          term->state = ROOT_TERM_STATE_CSI;
+          if (term->args.buf == NULL)
+            term->args.buf = root_zalloc (ROOT_PAGE_SIZE);
+          if (term->args.buf == NULL)
+            {
+              term->state = ROOT_TERM_STATE_WRI;
+              return;
+            }
+          term->args.buf[0].i = 0;
+          break;
+        default:
+          term->state = ROOT_TERM_STATE_WRI;
+          break;
+        }
+      return;
+    case ROOT_TERM_STATE_CSI:
+      {
+        int *i = &term->args.buf[term->args.cnt].i;
+        if (ch >= '0' && ch <= '9')
+          *i = *i * 10 + (ch - '0');
+        else if (ch == ';')
+          term->args.buf[++term->args.cnt].i = 0;
+        else
+          {
+            ++term->args.cnt;
+            term_handle_esc_seq (term, ch);
+          }
+        return;
+      }
+    }
   switch (ch)
     {
     case '\b':
@@ -109,6 +267,19 @@ root_term_putchar (root_term_t *term, char ch)
       term->advance (term);
       break;
     }
+}
+
+void
+root_term_sync_cursor (root_term_t *term)
+{
+  root_term_pos_t pos;
+  if (term == NULL)
+    {
+      root_seterrno (ROOT_EINVAL);
+      return;
+    }
+  pos = term->getxy (term);
+  term->putcursor (term, pos.x, pos.y);
 }
 
 root_ssize_t

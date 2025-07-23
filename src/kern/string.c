@@ -1,4 +1,5 @@
 #include "kern/string.h"
+#include "kern/malloc.h"
 
 #define ROOT_GENERIC_MEMMOVE
 
@@ -21,6 +22,36 @@ root_strcmp (const char *s1, const char *s2)
       ch2 = *++s2;
     }
   return ch1 - ch2;
+}
+
+int
+root_strncmp (const char *s1, const char *s2, root_size_t n)
+{
+  unsigned char ch1 = 0, ch2 = 0;
+  for (root_size_t i = 0; i < n; i++)
+    {
+      ch1 = s1[i], ch2 = s2[i];
+      if (ch1 == '\0' || ch1 != ch2)
+        break;
+    }
+  return ch1 - ch2;
+}
+
+char *
+root_strdup (const char *str)
+{
+  root_size_t len;
+  char *s;
+  if (str == NULL)
+    return NULL;
+  len = root_strlen (str);
+  s = root_malloc (len + 1);
+  if (s == NULL)
+    return NULL;
+  for (root_size_t i = 0; i < len; i++)
+    s[i] = str[i];
+  s[len] = '\0';
+  return s;
 }
 
 #ifdef ROOT_GENERIC_MEMCPY

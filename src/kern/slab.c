@@ -132,10 +132,14 @@ root_slab_alloc (root_slab_t *slab)
 }
 
 int
-root_slab_free (root_slab_t *slab, void *p, int release)
+root_slab_free (root_slab_t *slab, const void *p, int release)
 {
   int was_empty;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+  // casting away const is necessary to free const pointers
   root_node_t *node = (root_node_t *) p;
+#pragma GCC diagnostic pop
   if (slab == NULL)
     root_error ("slab_free: null slab");
   if (p == NULL)

@@ -1,3 +1,3 @@
 make clean
 mkdir -p build
-bear --output build/compile_commands.json -- make
+bear --output build/compile_commands.json -- make -j 8

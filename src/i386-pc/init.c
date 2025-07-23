@@ -1,4 +1,3 @@
-#include "i386-pc/biosterm.h"
 #include "i386-pc/e820.h"
 #include "i386-pc/isr.h"
 #include "i386-pc/pic.h"
@@ -6,6 +5,7 @@
 #include "kern/machine.h"
 #include "kern/mmap.h"
 #include "kern/print.h"
+#include "mods/i386-pc/vga.h"
 
 static root_mmap_t mmap = { 0 };
 
@@ -24,7 +24,8 @@ void
 root_machine_init (void)
 {
   root_cli ();
-  root_init_bios_term ();
+  // preload VGA module for printf
+  root_preload_initmod (&root_vga_term_initmod);
   init_alloc ();
   root_init_idt ();
   root_load_idt ();

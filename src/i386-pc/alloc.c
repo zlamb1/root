@@ -1,5 +1,6 @@
 #include "kern/alloc.h"
 #include "common/page.h"
+#include "kern/errno.h"
 #include "kern/print.h"
 #include "kern/string.h"
 #include "kern/types.h"
@@ -186,11 +187,14 @@ root_alloc_pages (root_uint32_t npages)
   if (p != NULL)
     return p;
   page_address = last_upage;
-  return root_try_alloc_pages (npages, page_address, hint_upage);
+  p = root_try_alloc_pages (npages, page_address, hint_upage);
+  if (p == NULL)
+    root_seterrno (ROOT_EALLOC);
+  return p;
 }
 
 void
-root_free_pages (void *p)
+root_free_pages (const void *p)
 {
   root_uintptr_t page_address = (root_uintptr_t) p;
   root_page_t *page;

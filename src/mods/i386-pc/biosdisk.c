@@ -11,4 +11,4 @@ static root_biosdisk_t disks;
 
 ROOT_MOD_INIT (biosdisk) {}
 
-ROOT_MOD_FINI () {}
+ROOT_MOD_FINI (biosdisk) {}

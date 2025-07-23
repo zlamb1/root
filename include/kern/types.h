@@ -11,9 +11,10 @@
 #define ROOT_EINVAL  -2
 #define ROOT_EARG    -3
 #define ROOT_ENOENT  -4
-#define ROOT_EALLOC  -5
-#define ROOT_EDEV    -6
-#define ROOT_EUOP    -7
+#define ROOT_EDUPENT -5
+#define ROOT_EALLOC  -6
+#define ROOT_EDEV    -7
+#define ROOT_EUOP    -8
 
 typedef uint8_t root_uint8_t;
 typedef uint16_t root_uint16_t;

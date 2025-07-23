@@ -4,6 +4,23 @@
 #include "file.h"
 #include "types.h"
 
+#define ROOT_TERM_COLOR_BLACK        0x0
+#define ROOT_TERM_COLOR_BLUE         0x1
+#define ROOT_TERM_COLOR_GREEN        0x2
+#define ROOT_TERM_COLOR_CYAN         0x3
+#define ROOT_TERM_COLOR_RED          0x4
+#define ROOT_TERM_COLOR_PURPLE       0x5
+#define ROOT_TERM_COLOR_BROWN        0x6
+#define ROOT_TERM_COLOR_GRAY         0x7
+#define ROOT_TERM_COLOR_DARK_GRAY    0x8
+#define ROOT_TERM_COLOR_LIGHT_BLUE   0x9
+#define ROOT_TERM_COLOR_LIGHT_GREEN  0xA
+#define ROOT_TERM_COLOR_LIGHT_CYAN   0xB
+#define ROOT_TERM_COLOR_LIGHT_RED    0xC
+#define ROOT_TERM_COLOR_LIGHT_PURPLE 0xD
+#define ROOT_TERM_COLOR_YELLOW       0xE
+#define ROOT_TERM_COLOR_WHITE        0xF
+
 #define ROOT_TERM_IOCTL_SYNC_CURSOR 0
 
 typedef struct
@@ -24,10 +41,40 @@ typedef struct
 
 typedef enum
 {
-  ROOT_TERM_STATE_WRI,
+  ROOT_TERM_STATE_WRI = 0,
   ROOT_TERM_STATE_ESC,
   ROOT_TERM_STATE_CSI
 } root_term_state_t;
+
+typedef enum
+{
+  ROOT_TERM_CSI_CUU = 'A',
+  ROOT_TERM_CSI_CUD = 'B',
+  ROOT_TERM_CSI_CUF = 'C',
+  ROOT_TERM_CSI_CUB = 'D',
+  ROOT_TERM_CSI_CNL = 'E',
+  ROOT_TERM_CSI_CPL = 'F',
+  ROOT_TERM_CSI_CHA = 'G',
+  ROOT_TERM_CSI_CUP = 'H',
+  ROOT_TERM_CSI_ED = 'J',
+  ROOT_TERM_CSI_EL = 'K',
+  ROOT_TERM_CSI_SU = 'S',
+  ROOT_TERM_CSI_SD = 'T',
+  ROOT_TERM_CSI_HVP = 'f',
+  ROOT_TERM_CSI_SGR = 'm',
+  ROOT_TERM_CSI_SCP = 's',
+  ROOT_TERM_CSI_RCP = 'u'
+} root_term_csi_t;
+
+typedef struct
+{
+  root_size_t cap, cnt;
+  union
+  {
+    int i;
+    const char *str;
+  } *buf;
+} root_term_args_t;
 
 typedef struct root_term_t
 {
@@ -45,6 +92,11 @@ typedef struct root_term_t
   void (*newline) (struct root_term_t *term);
   void (*clr) (struct root_term_t *term);
   root_term_file_t stdout;
+
+  unsigned char state;
+  root_term_args_t args;
+  root_term_pos_t saved_cursor_pos;
+
   struct root_term_t *next;
 } root_term_t;
 
@@ -57,6 +109,8 @@ root_term_t *root_iterate_terms (root_term_t *term);
 void root_term_set_primary (root_term_t *term);
 
 void root_term_putchar (root_term_t *term, char ch);
+
+void root_term_sync_cursor (root_term_t *term);
 
 root_ssize_t root_term_write (root_file_t *file, const char *buf,
                               root_size_t size);
