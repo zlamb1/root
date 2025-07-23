@@ -20,6 +20,7 @@ WARNINGS := \
 CFLAGS := ${WARNINGS} -Os -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 		  -fno-strict-aliasing -mno-red-zone -fstack-protector-all \
 		  -falign-jumps=1 -falign-loops=1 -falign-functions=1 \
+		  -freg-struct-return -fno-asynchronous-unwind-tables -fno-unwind-tables \
 		  -mno-mmx -mno-sse -mno-sse2 -mno-3dnow
 
 BOOT_SRCDIR   := src/boot/${TARGET}
