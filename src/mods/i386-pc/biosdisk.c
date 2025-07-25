@@ -56,11 +56,11 @@ biosdisk_read (root_disk_t *disk, char *buf, root_size_t sec, root_size_t nsec)
   root_size_t read = 0;
   /* NOTE: it is very important that we use a buffer below 1MiB for the BIOS
    * int */
-  char tmpbuf[ROOT_SECTOR_SIZE];
+  char tmpbuf[disk->sector_size];
   if (disk == NULL || (buf == NULL && nsec))
     return ROOT_EINVAL;
   biosdisk = (root_biosdisk_t *) disk;
-  while (sec + read < nsec && sec < disk->nsec)
+  while (sec + read < nsec && sec < disk->total_sectors)
     {
       root_bios_args_t args = { 0 };
       disk_read_packet_t packet = { 0 };
@@ -76,8 +76,8 @@ biosdisk_read (root_disk_t *disk, char *buf, root_size_t sec, root_size_t nsec)
       root_bios_interrupt (0x13, &args);
       if (args.flags & ROOT_BIOS_CARRY_FLAG)
         return ROOT_EIO;
-      root_memcpy (buf, tmpbuf, ROOT_SECTOR_SIZE);
-      buf += ROOT_SECTOR_SIZE;
+      root_memcpy (buf, tmpbuf, disk->sector_size);
+      buf += disk->sector_size;
       read++;
     }
   return read;
@@ -124,7 +124,8 @@ ROOT_MOD_INIT (biosdisk)
           return;
         }
       biosdisk->drive_number = BOOT_DRIVE_NUMBER;
-      biosdisk->disk.nsec = params.total_sectors;
+      biosdisk->disk.sector_size = params.bytes_per_sector;
+      biosdisk->disk.total_sectors = params.total_sectors;
       biosdisk->disk.disk_read = biosdisk_read;
       root_init_disk_dev (&biosdisk->disk);
       biosdisk->next = biosdisk;

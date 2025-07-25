@@ -13,7 +13,7 @@ struct root_partition_t;
 typedef struct root_disk_t
 {
   root_dev_t dev;
-  root_uint32_t nsec;
+  root_uint32_t sector_size, total_sectors;
   root_ssize_t (*disk_read) (struct root_disk_t *disk, char *buf,
                              root_size_t sec, root_size_t nsec);
   root_ssize_t (*disk_write) (struct root_disk_t *disk, const char *buf,

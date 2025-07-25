@@ -109,32 +109,38 @@ root_disk_read (root_disk_t *disk, char *buf, root_size_t offset,
 {
   root_size_t sector, tmpsize = size, tmp, tmpoffset;
   root_ssize_t tmpread;
-  char tmpbuf[ROOT_SECTOR_SIZE];
+  char *tmpbuf = NULL;
   if (disk == NULL || disk->disk_read == NULL || buf == NULL)
     {
       root_seterrno (ROOT_EINVAL);
       return -1;
     }
-  sector = offset / ROOT_SECTOR_SIZE;
-  if (!size || sector >= disk->nsec)
+  sector = offset / disk->sector_size;
+  if (!size || sector >= disk->total_sectors)
     return 0;
-  tmp = sector * ROOT_SECTOR_SIZE;
+  tmp = sector * disk->sector_size;
   if (tmp != offset)
     {
       tmpoffset = offset - tmp;
+      if (tmpbuf == NULL)
+        {
+          tmpbuf = root_malloc (disk->sector_size);
+          if (tmpbuf == NULL)
+            goto fail;
+        }
       tmpread = disk->disk_read (disk, tmpbuf, sector, 1);
       if (tmpread < 0)
         {
           root_seterrno (tmpread);
-          return -1;
+          goto fail;
         }
       else if (tmpread != 1)
         {
           root_warn ("root_disk_read: read invalid number of sectors");
           root_seterrno (ROOT_EIO);
-          return -1;
+          goto fail;
         }
-      tmpread = MIN (size, ROOT_SECTOR_SIZE - tmpoffset);
+      tmpread = MIN (size, disk->sector_size - tmpoffset);
       root_memcpy (buf, tmpbuf + tmpoffset, tmpread);
       buf += tmpread;
       size -= tmpread;
@@ -142,52 +148,64 @@ root_disk_read (root_disk_t *disk, char *buf, root_size_t offset,
         goto end;
       sector++;
     }
-  tmp = size / ROOT_SECTOR_SIZE;
+  tmp = size / disk->sector_size;
   if (tmp)
     {
-      tmp = MIN (tmp, disk->nsec - sector);
+      tmp = MIN (tmp, disk->total_sectors - sector);
       if (!tmp)
         goto end;
       tmpread = disk->disk_read (disk, buf, sector, tmp);
       if (tmpread < 0)
         {
           root_seterrno (tmpread);
-          return -1;
+          goto fail;
         }
       if ((root_size_t) tmpread != tmp)
         {
           root_warn ("root_disk_read: read invalid number of sectors");
           root_seterrno (ROOT_EIO);
-          return -1;
+          goto fail;
         }
-      tmpread = tmp * ROOT_SECTOR_SIZE;
+      tmpread = tmp * disk->sector_size;
       buf += tmpread;
       size -= tmpread;
       sector += tmp;
     }
-  if (size && sector < disk->nsec)
+  if (size && sector < disk->total_sectors)
     {
-      if (size >= ROOT_SECTOR_SIZE)
+      if (size >= disk->sector_size)
         {
           root_warn ("root_disk_read: invalid size");
           root_seterrno (ROOT_EIO);
-          return -1;
+          goto fail;
+        }
+      if (tmpbuf == NULL)
+        {
+          tmpbuf = root_malloc (disk->sector_size);
+          if (tmpbuf == NULL)
+            goto fail;
         }
       tmpread = disk->disk_read (disk, tmpbuf, sector, 1);
       if (tmpread < 0)
         {
           root_seterrno (tmpread);
-          return -1;
+          goto fail;
         }
       else if (tmpread != 1)
         {
           root_warn ("root_disk_read: read invalid number of sectors");
           root_seterrno (ROOT_EIO);
-          return -1;
+          goto fail;
         }
       root_memcpy (buf, tmpbuf, size);
       size = 0;
     }
 end:
+  if (tmpbuf != NULL)
+    root_free (tmpbuf);
   return tmpsize - size;
+fail:
+  if (tmpbuf != NULL)
+    root_free (tmpbuf);
+  return -1;
 }
