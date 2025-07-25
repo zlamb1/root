@@ -11,6 +11,7 @@ root_main (void)
   root_machine_init ();
   root_ok ("machine init");
   root_load_initmods ();
+  root_printf ("\n");
   root_shell_task ();
   for (;;)
     ;

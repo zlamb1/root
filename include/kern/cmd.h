@@ -33,7 +33,7 @@ void root_register_cmdext (const char *name, const char *desc, root_cmd cmd,
                            root_cmd_tab_completer tab_completer);
 root_err_t root_unregister_cmd (const char *name);
 
-root_cmd_t *root_cmd_iterate (root_cmd_t *cmd);
+root_cmd_t *root_get_cmds (void);
 root_cmd_t *root_get_cmd (const char *name);
 
 #endif

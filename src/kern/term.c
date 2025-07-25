@@ -1,7 +1,6 @@
 #include "kern/term.h"
 #include "common/page.h"
 #include "kern/errno.h"
-#include "kern/machine.h"
 #include "kern/malloc.h"
 #include "kern/print.h"
 #include "kern/task.h"
@@ -39,6 +38,7 @@ typedef enum
 } root_term_csi_t;
 
 static root_term_t *terms = NULL;
+static root_term_t *primary_term = NULL;
 
 static unsigned char vt_color_map[8]
     = { [0] = ROOT_TERM_COLOR_BLACK, [1] = ROOT_TERM_COLOR_RED,
@@ -115,11 +115,19 @@ root_iterate_terms (root_term_t *term)
   return term == NULL ? terms : term->next;
 }
 
+root_term_t *
+root_term_get_primary (void)
+{
+  return primary_term;
+}
+
 void
 root_term_set_primary (root_term_t *term)
 {
   if (root_running_task == NULL || root_running_task->nfds <= ROOT_STDOUT)
-    root_halt ();
+    /* TODO: think about if primary term is NULL here */
+    root_error ("term: unable to set primary term");
+  primary_term = term;
   if (term != NULL)
     {
       root_running_task->fds[ROOT_STDOUT] = &term->stdout.base;

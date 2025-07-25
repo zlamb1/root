@@ -79,6 +79,7 @@ void root_register_term (root_term_t *term);
 root_err_t root_unregister_term (root_term_t *term);
 root_term_t *root_iterate_terms (root_term_t *term);
 
+root_term_t *root_term_get_primary (void);
 void root_term_set_primary (root_term_t *term);
 
 void root_term_putchar (root_term_t *term, char ch);

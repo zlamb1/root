@@ -13,6 +13,7 @@
 #define ROOT_EDUPENT -4
 #define ROOT_EALLOC  -5
 #define ROOT_EDEV    -6
+#define ROOT_EIO     -7
 
 typedef uint8_t root_uint8_t;
 typedef uint16_t root_uint16_t;

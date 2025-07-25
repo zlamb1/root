@@ -17,7 +17,7 @@ WARNINGS := \
 	-Wno-error=format -Wsequence-point -Wswitch -Wwrite-strings -pedantic-errors \
 	-Wno-unused
 
-CFLAGS := ${WARNINGS} -Os -g -c -m32 -fno-pie -nostdlib -ffreestanding \
+CFLAGS := ${WARNINGS} -g -c -m32 -fno-pie -nostdlib -ffreestanding \
 		  -fno-strict-aliasing -mno-red-zone -fstack-protector-all \
 		  -falign-jumps=1 -falign-loops=1 -falign-functions=1 \
 		  -freg-struct-return -fno-asynchronous-unwind-tables -fno-unwind-tables \
@@ -49,7 +49,7 @@ MODS_INCLDIRS  := include/
 MODS_OBJFILES  := ${addprefix ${MODS_OUTDIR}/,${notdir ${MODS_SRCFILES:.c=.mod}}}
 MODS_DEPFILES  := ${MODS_OBJFILES:.mod=.d}
 
-MODS_BUILTINS      := vga ps2 sh
+MODS_BUILTINS      := vga ps2 biosdisk sh dev hello halt reboot
 MODS_BUILTINS_OBJS := ${addprefix ${MODS_OUTDIR}/,${addsuffix .o,${MODS_BUILTINS}}}
 
 BOOTLD  := ${BOOT_SRCDIR}/boot.ld

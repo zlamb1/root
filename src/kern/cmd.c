@@ -50,6 +50,12 @@ root_unregister_cmd (const char *name)
 }
 
 root_cmd_t *
+root_get_cmds (void)
+{
+  return cmds;
+}
+
+root_cmd_t *
 root_get_cmd (const char *name)
 {
   root_cmd_t *cmd = cmds;

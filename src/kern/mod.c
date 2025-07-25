@@ -23,8 +23,7 @@ root_load_initmods (void)
   root_size_t size = (root_uintptr_t) end - (root_uintptr_t) mod;
   if (size % sizeof (root_initmod_t) != 0)
     {
-      root_error ("invalid kern_initmods section", size,
-                  sizeof (root_initmod_t));
+      root_error ("invalid kern_initmods section");
       return;
     }
   // TODO: resolve deps

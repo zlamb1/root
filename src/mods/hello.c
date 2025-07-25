@@ -3,7 +3,7 @@
 #include "kern/print.h"
 
 static void
-root_hello_command (root_cmd_args_t *args)
+hello_command (root_cmd_args_t *args)
 {
   (void) args;
   root_printf ("Hello, world!\n");
@@ -11,7 +11,7 @@ root_hello_command (root_cmd_args_t *args)
 
 ROOT_MOD_INIT (hello)
 {
-  root_register_cmd ("hello", "prints \"Hello, world!\"", root_hello_command);
+  root_register_cmd ("hello", "prints \"Hello, world!\"", hello_command);
 }
 
-ROOT_MOD_FINI (hello) {}
+ROOT_MOD_FINI (hello) { root_unregister_cmd ("hello"); }

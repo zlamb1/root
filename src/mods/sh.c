@@ -16,11 +16,12 @@ typedef struct
 {
   int cursor, len, cap;
   char *buf;
+  const char *cmd;
 } root_shell_t;
 
 static root_shell_t *sh = NULL;
 
-static const char *prompt = "\033[0mroot> ";
+static const char *prompt = "\033[0;94mroot> \033[0m";
 
 static root_cmd_args_t *
 sh_parse_args (char *buf, root_size_t len, root_size_t cap)
@@ -60,7 +61,7 @@ sh_parse_args (char *buf, root_size_t len, root_size_t cap)
 }
 
 static void
-root_shell_handle_input (root_keycode_t kc, char ascii)
+sh_handle_input (root_keycode_t kc, char ascii)
 {
   switch (kc)
     {
@@ -102,7 +103,11 @@ root_shell_handle_input (root_keycode_t kc, char ascii)
             if (cmd == NULL)
               root_printf ("%s: \033[91mcommand not found\n", cmd_name);
             else
-              cmd->cmd (args);
+              {
+                sh->cmd = cmd->name;
+                cmd->cmd (args);
+                sh->cmd = NULL;
+              }
           }
         root_free (args->argv);
         root_free (args);
@@ -124,6 +129,19 @@ root_shell_handle_input (root_keycode_t kc, char ascii)
 }
 
 void
+root_sh_cmd_error (const char *fmt, ...)
+{
+  va_list args;
+  if (sh->cmd == NULL)
+    root_error ("sh: command error invoked with null command");
+  root_printf ("\033[93m%s: \033[91m", sh->cmd);
+  va_start (args, fmt);
+  root_vprintf (fmt, args);
+  va_end (args);
+  root_printf ("\n");
+}
+
+void
 root_shell_task (void)
 {
   root_input_event_t evt;
@@ -136,7 +154,45 @@ root_shell_task (void)
   for (;;)
     {
       if (root_poll_input (&evt) && evt.state != ROOT_KEY_RELEASE)
-        root_shell_handle_input (evt.kc, evt.ascii);
+        sh_handle_input (evt.kc, evt.ascii);
+    }
+}
+
+/* BUILTIN COMMANDS */
+
+static void
+sh_command_echo (root_cmd_args_t *args)
+{
+  for (int i = 1; i < args->argc; i++)
+    {
+      root_printf ("%s", args->argv[i]);
+      if (i != args->argc - 1)
+        root_printf (" ");
+    }
+  if (args->argc > 1)
+    root_printf ("\n");
+}
+
+static void
+sh_command_help (root_cmd_args_t *args)
+{
+  root_cmd_t *cmd;
+  (void) args;
+  cmd = root_get_cmds ();
+  if (cmd == NULL)
+    {
+      root_sh_cmd_error ("no commands found");
+      return;
+    }
+  while (cmd != NULL)
+    {
+      root_printf ("\033[93m%s: ", cmd->name);
+      if (cmd->desc == NULL)
+        root_printf ("\033[37mno description");
+      else
+        root_printf ("\033[0m%s", cmd->desc);
+      root_printf ("\n");
+      cmd = cmd->next;
     }
 }
 
@@ -158,6 +214,8 @@ ROOT_MOD_INIT (sh)
       root_seterrno (ROOT_EALLOC);
       return;
     }
+  root_register_cmd ("echo", "prints arguments", sh_command_echo);
+  root_register_cmd ("help", "prints all commands", sh_command_help);
 }
 
 ROOT_MOD_FINI (sh)
